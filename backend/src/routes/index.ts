@@ -1,6 +1,8 @@
 import { Router } from "express";
 import authRoutes from "./auth.routes";
 import personRoutes from "./person.routes";
+import courtRoutes from "./court.routes";
+import caseRoutes from "./case.routes";
 import { authMiddleware } from "../middleware/auth";
 import { firmContextMiddleware } from "../middleware/firm-context";
 
@@ -15,6 +17,9 @@ router.get("/health", (_req, res) => {
 router.use("/auth", authRoutes);
 
 // Protected routes — auth + firm context
-router.use("/persons", authMiddleware, firmContextMiddleware, personRoutes);
+const protect = [authMiddleware, firmContextMiddleware];
+router.use("/persons", ...protect, personRoutes);
+router.use("/courts", ...protect, courtRoutes);
+router.use("/cases", ...protect, caseRoutes);
 
 export default router;
