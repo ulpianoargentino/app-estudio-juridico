@@ -11,6 +11,12 @@ export const es = {
     reports: "Reportes",
     settings: "Configuración",
   },
+  header: {
+    openMenu: "Abrir menú",
+    notifications: "Notificaciones",
+    aiAssistant: "Asistente IA",
+    toggleTheme: "Cambiar tema",
+  },
   common: {
     save: "Guardar",
     cancel: "Cancelar",
@@ -30,6 +36,7 @@ export const es = {
     actions: "Acciones",
     noResults: "Sin resultados",
     required: "Obligatorio",
+    comingSoon: "Próximamente",
   },
   auth: {
     login: "Iniciar sesión",

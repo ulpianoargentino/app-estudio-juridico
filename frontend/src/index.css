@@ -116,6 +116,10 @@
   * {
     @apply border-border;
   }
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
   body {
     @apply bg-background text-foreground;
   }
