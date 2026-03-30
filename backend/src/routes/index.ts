@@ -3,6 +3,7 @@ import authRoutes from "./auth.routes";
 import personRoutes from "./person.routes";
 import courtRoutes from "./court.routes";
 import caseRoutes from "./case.routes";
+import matterRoutes from "./matter.routes";
 import { authMiddleware } from "../middleware/auth";
 import { firmContextMiddleware } from "../middleware/firm-context";
 
@@ -21,5 +22,6 @@ const protect = [authMiddleware, firmContextMiddleware];
 router.use("/persons", ...protect, personRoutes);
 router.use("/courts", ...protect, courtRoutes);
 router.use("/cases", ...protect, caseRoutes);
+router.use("/matters", ...protect, matterRoutes);
 
 export default router;

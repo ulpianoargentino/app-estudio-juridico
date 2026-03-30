@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as caseController from "../controllers/case.controller";
+import * as partyController from "../controllers/party.controller";
 
 const router = Router();
 
@@ -11,5 +12,10 @@ router.get("/:id", caseController.getById);
 router.post("/", caseController.create);
 router.put("/:id", caseController.update);
 router.delete("/:id", caseController.remove);
+
+// Party sub-routes for cases
+router.get("/:caseId/parties", partyController.listPartiesOfCase);
+router.post("/:caseId/parties", partyController.addPartyToCase);
+router.delete("/:caseId/parties/:partyId", partyController.removePartyFromCase);
 
 export default router;
