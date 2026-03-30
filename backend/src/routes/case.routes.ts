@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as caseController from "../controllers/case.controller";
 import * as partyController from "../controllers/party.controller";
+import { mountCaseDocumentRoutes } from "./document.routes";
 
 const router = Router();
 
@@ -17,5 +18,8 @@ router.delete("/:id", caseController.remove);
 router.get("/:caseId/parties", partyController.listPartiesOfCase);
 router.post("/:caseId/parties", partyController.addPartyToCase);
 router.delete("/:caseId/parties/:partyId", partyController.removePartyFromCase);
+
+// Document sub-routes for cases
+mountCaseDocumentRoutes(router);
 
 export default router;

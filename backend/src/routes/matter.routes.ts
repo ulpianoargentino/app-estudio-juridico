@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as matterController from "../controllers/matter.controller";
 import * as partyController from "../controllers/party.controller";
+import { mountMatterDocumentRoutes } from "./document.routes";
 
 const router = Router();
 
@@ -15,5 +16,8 @@ router.post("/:id/convert", matterController.convert);
 router.get("/:matterId/parties", partyController.listPartiesOfMatter);
 router.post("/:matterId/parties", partyController.addPartyToMatter);
 router.delete("/:matterId/parties/:partyId", partyController.removePartyFromMatter);
+
+// Document sub-routes for matters
+mountMatterDocumentRoutes(router);
 
 export default router;
