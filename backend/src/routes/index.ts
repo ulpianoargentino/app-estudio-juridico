@@ -1,5 +1,8 @@
 import { Router } from "express";
 import authRoutes from "./auth.routes";
+import personRoutes from "./person.routes";
+import { authMiddleware } from "../middleware/auth";
+import { firmContextMiddleware } from "../middleware/firm-context";
 
 const router = Router();
 
@@ -11,8 +14,7 @@ router.get("/health", (_req, res) => {
 // Auth routes (register/login are public, me requires auth)
 router.use("/auth", authRoutes);
 
-// TODO: Mount module routes here as they are built
-// router.use("/cases", authMiddleware, firmContextMiddleware, caseRoutes);
-// router.use("/matters", authMiddleware, firmContextMiddleware, matterRoutes);
+// Protected routes — auth + firm context
+router.use("/persons", authMiddleware, firmContextMiddleware, personRoutes);
 
 export default router;
