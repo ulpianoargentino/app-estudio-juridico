@@ -1,6 +1,6 @@
 // AI service abstraction layer.
-// All AI calls go through this service — the rest of the app NEVER calls the
-// Anthropic API directly.
+// The rest of the application NEVER calls the Anthropic API directly.
+// All AI interactions go through this service.
 
 export class AIService {
   // Genera borrador de escrito judicial a partir de datos del expediente y plantilla
@@ -9,35 +9,41 @@ export class AIService {
     templateId: string,
     filingType: string
   ): Promise<string> {
-    throw new Error("AIService.generateFiling not implemented");
+    // TODO: Implement via Anthropic API
+    throw new Error("Not implemented: generateFiling");
   }
 
   // Analiza un documento subido
-  async analyzeDocument(documentId: string): Promise<unknown> {
-    throw new Error("AIService.analyzeDocument not implemented");
+  async analyzeDocument(documentContent: string): Promise<unknown> {
+    // TODO: Implement via Anthropic API
+    throw new Error("Not implemented: analyzeDocument");
   }
 
   // Búsqueda semántica de jurisprudencia relevante
   async searchJurisprudence(query: string): Promise<unknown[]> {
-    throw new Error("AIService.searchJurisprudence not implemented");
+    // TODO: Implement via Anthropic API
+    throw new Error("Not implemented: searchJurisprudence");
   }
 
   // Sugiere acciones procesales según el estado del expediente
-  async suggestNextSteps(caseId: string): Promise<unknown[]> {
-    throw new Error("AIService.suggestNextSteps not implemented");
+  async suggestNextSteps(caseData: unknown): Promise<string[]> {
+    // TODO: Implement via Anthropic API
+    throw new Error("Not implemented: suggestNextSteps");
   }
 
   // Detecta riesgo de caducidad/prescripción
-  async alertExpiration(caseId: string): Promise<unknown> {
-    throw new Error("AIService.alertExpiration not implemented");
+  async alertExpiration(caseData: unknown): Promise<unknown> {
+    // TODO: Implement via Anthropic API
+    throw new Error("Not implemented: alertExpiration");
   }
 
   // Chat libre con contexto del expediente
   async contextualChat(
-    caseId: string,
-    message: string
+    message: string,
+    caseContext: unknown
   ): Promise<string> {
-    throw new Error("AIService.contextualChat not implemented");
+    // TODO: Implement via Anthropic API
+    throw new Error("Not implemented: contextualChat");
   }
 }
 

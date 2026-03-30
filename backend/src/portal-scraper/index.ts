@@ -1,27 +1,29 @@
-// Portal scraper service — runs server-side only.
-// Periodically queries judicial portals with encrypted user credentials,
-// compares results with app data, and creates movements + notifications
-// when new activity is detected.
+// Portal scraper service.
+// Runs server-side (never in the user's browser).
+// Periodically queries judicial portals with the user's stored credentials
+// and creates movements + notifications when new activity is detected.
 
 // TODO: Implement scraper for MEV (mev.scba.gov.ar) — Provincia de Buenos Aires
 // TODO: Implement scraper for Portal del SAE (portaldelsae.justucuman.gov.ar) — Tucumán
 
-export class PortalScraperService {
-  // Scrape a specific portal for a given case
-  async scrapeCase(
-    portal: "MEV" | "SAE",
-    caseNumber: string,
-    credentials: { username: string; password: string }
+// Architecture note: each province has its own portals, jurisdictions, and conventions.
+// New provinces should be addable without redesigning the scraper architecture.
+
+export class PortalScraper {
+  async scrapePortal(
+    portalId: string,
+    credentials: { username: string; password: string },
+    caseNumber: string
   ): Promise<unknown[]> {
-    throw new Error("PortalScraperService.scrapeCase not implemented");
+    // TODO: Implement per-portal scraping logic
+    throw new Error("Not implemented: scrapePortal");
   }
 
-  // Run periodic check for all tracked cases of a firm
-  async runPeriodicCheck(firmId: string): Promise<void> {
-    throw new Error(
-      "PortalScraperService.runPeriodicCheck not implemented"
-    );
+  async checkForUpdates(firmId: string): Promise<void> {
+    // TODO: Compare portal results with existing data,
+    // create new movements and send notifications on changes
+    throw new Error("Not implemented: checkForUpdates");
   }
 }
 
-export const portalScraperService = new PortalScraperService();
+export const portalScraper = new PortalScraper();

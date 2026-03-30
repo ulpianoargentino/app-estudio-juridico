@@ -2,16 +2,16 @@ import { Router } from "express";
 
 const router = Router();
 
-// Health check — no auth required
+// Health check endpoint (no auth required)
 router.get("/health", (_req, res) => {
   res.json({ data: { status: "ok" } });
 });
 
-// Module routes will be mounted here as they are built:
-// router.use("/cases", casesRouter);
-// router.use("/matters", mattersRouter);
-// router.use("/persons", personsRouter);
-// router.use("/events", eventsRouter);
-// router.use("/documents", documentsRouter);
+// TODO: Mount module routes here as they are built
+// Example:
+// router.use("/cases", authMiddleware, tenantMiddleware, caseRoutes);
+// router.use("/matters", authMiddleware, tenantMiddleware, matterRoutes);
+// router.use("/persons", authMiddleware, tenantMiddleware, personRoutes);
+// router.use("/events", authMiddleware, tenantMiddleware, eventRoutes);
 
 export default router;

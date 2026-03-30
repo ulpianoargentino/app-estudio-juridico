@@ -1,23 +1,26 @@
 import { Request, Response, NextFunction } from "express";
+import { AppError } from "./error-handler";
 
-// Extracts firmId from the authenticated user and attaches it to the request
-// for downstream use. Every database query MUST filter by this firmId.
+// Extracts firmId from the authenticated user and attaches it to the request.
+// Every data query MUST filter by req.user.firmId.
 export function tenantMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
-  if (!req.user || !req.user.firmId) {
-    res.status(403).json({
-      error: {
-        code: "FORBIDDEN",
-        message: "No firm context found for authenticated user",
-      },
-    });
-    return;
+  if (!req.user) {
+    throw new AppError(401, "UNAUTHORIZED", "Authentication required");
   }
 
-  // firmId is already available via req.user.firmId
-  // All service/repository calls must use req.user.firmId to enforce tenant isolation
+  if (!req.user.firmId) {
+    throw new AppError(
+      403,
+      "TENANT_MISSING",
+      "User is not associated with a firm"
+    );
+  }
+
+  // firmId is already on req.user, available to all downstream handlers.
+  // Controllers MUST use req.user.firmId in every database query.
   next();
 }

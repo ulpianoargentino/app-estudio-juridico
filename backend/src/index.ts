@@ -9,18 +9,18 @@ const app = express();
 
 // Security and parsing middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: config.cors.origin }));
 app.use(express.json());
 
-// API routes
+// Mount all routes under /api
 app.use("/api", routes);
 
-// Error handling — must be registered after routes
+// Global error handler (must be registered after routes)
 app.use(errorHandler);
 
 app.listen(config.port, () => {
   console.log(
-    `Server running on port ${config.port} [${config.nodeEnv}]`
+    `Server running on port ${config.port} in ${config.nodeEnv} mode`
   );
 });
 
