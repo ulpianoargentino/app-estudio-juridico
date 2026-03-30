@@ -38,6 +38,14 @@ export const es = {
     required: "Obligatorio",
     comingSoon: "Próximamente",
   },
+  pagination: {
+    page: "Página",
+    of: "de",
+  },
+  personSelect: {
+    placeholder: "Seleccionar persona",
+    searchPlaceholder: "Buscar persona...",
+  },
   auth: {
     login: "Iniciar sesión",
     loginDescription: "Ingresá tus credenciales para acceder",
