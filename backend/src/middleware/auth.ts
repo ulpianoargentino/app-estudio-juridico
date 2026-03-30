@@ -1,28 +1,39 @@
 import { Request, Response, NextFunction } from "express";
-import { AuthenticatedUser } from "../types";
+import jwt from "jsonwebtoken";
+import { config } from "../config";
+import type { UserRole } from "../models/enums";
 
-// Extend Express Request to include authenticated user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-    }
-  }
+interface JwtPayload {
+  userId: string;
+  firmId: string;
+  role: UserRole;
 }
 
-// TODO: Implement JWT validation or session-based auth.
-// For now this is a stub that rejects all requests.
 export function authMiddleware(
-  _req: Request,
+  req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void {
-  // TODO: Extract token from Authorization header, validate it,
-  // and attach the authenticated user to req.user.
-  res.status(401).json({
-    error: {
-      code: "UNAUTHORIZED",
-      message: "Authentication required",
-    },
-  });
+  const token = req.cookies?.token;
+
+  if (!token) {
+    res.status(401).json({
+      error: { code: "UNAUTHORIZED", message: "No autenticado" },
+    });
+    return;
+  }
+
+  try {
+    const payload = jwt.verify(token, config.jwt.secret) as JwtPayload;
+    req.user = {
+      userId: payload.userId,
+      firmId: payload.firmId,
+      role: payload.role,
+    };
+    next();
+  } catch {
+    res.status(401).json({
+      error: { code: "UNAUTHORIZED", message: "No autenticado" },
+    });
+  }
 }

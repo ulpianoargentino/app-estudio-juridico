@@ -1,6 +1,8 @@
+import "./types/express";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { config } from "./config";
 import routes from "./routes";
 import { errorHandler } from "./middleware/error-handler";
@@ -9,8 +11,9 @@ const app = express();
 
 // Security and parsing middleware
 app.use(helmet());
-app.use(cors({ origin: config.cors.origin }));
+app.use(cors({ origin: config.cors.origin, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 // Mount all routes under /api
 app.use("/api", routes);
