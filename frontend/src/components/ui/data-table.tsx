@@ -24,7 +24,7 @@ interface DataTableProps<T> {
   onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends object>({
   columns,
   data,
   isLoading = false,
@@ -111,13 +111,13 @@ export function DataTable<T extends Record<string, unknown>>({
       <TableBody>
         {data.map((row, i) => (
           <TableRow
-            key={(row.id as string) ?? i}
+            key={((row as Record<string, unknown>).id as string) ?? i}
             className={cn(onRowClick && "cursor-pointer")}
             onClick={() => onRowClick?.(row)}
           >
             {columns.map((col) => (
               <TableCell key={col.key} className={col.className}>
-                {col.render ? col.render(row) : (row[col.key] as ReactNode) ?? "—"}
+                {col.render ? col.render(row) : ((row as Record<string, unknown>)[col.key] as ReactNode) ?? "—"}
               </TableCell>
             ))}
           </TableRow>

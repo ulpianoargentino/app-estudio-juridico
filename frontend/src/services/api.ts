@@ -6,11 +6,17 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Unwrap { data: T } envelope from successful responses
+// Unwrap { data: T } envelope, but preserve meta for paginated responses
 apiClient.interceptors.response.use(
   (response) => {
-    if (response.data && "data" in response.data) {
-      response.data = response.data.data;
+    const body = response.data;
+    if (body && typeof body === "object" && "data" in body) {
+      // Paginated response: { data: T[], meta: {...} } — keep as-is
+      if ("meta" in body) {
+        return response;
+      }
+      // Single-item response: { data: T } — unwrap
+      response.data = body.data;
     }
     return response;
   },
