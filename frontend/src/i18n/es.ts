@@ -33,10 +33,22 @@ export const es = {
   },
   auth: {
     login: "Iniciar sesión",
+    loginDescription: "Ingresá tus credenciales para acceder",
     logout: "Cerrar sesión",
     email: "Correo electrónico",
     password: "Contraseña",
+    passwordMinLength: "Mínimo 8 caracteres",
     register: "Registrarse",
+    registerDescription: "Creá tu cuenta y la de tu estudio jurídico",
+    createAccount: "Crear cuenta",
+    noAccount: "¿No tenés cuenta?",
+    hasAccount: "¿Ya tenés cuenta?",
+    firmName: "Nombre del estudio",
+    firmNamePlaceholder: "Ej: Estudio Jurídico Pérez & Asociados",
+  },
+  dashboard: {
+    title: "Panel",
+    welcome: "Bienvenido",
   },
   cases: {
     title: "Expedientes",
