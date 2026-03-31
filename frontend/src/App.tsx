@@ -10,6 +10,7 @@ import { RegisterPage } from "@/pages/register";
 import { DashboardPage } from "@/pages/dashboard";
 import { PersonsPage } from "@/pages/persons";
 import { PersonDetailPage } from "@/pages/persons/person-detail";
+import { CaseDetailPage } from "@/pages/cases/case-detail";
 import { PlaceholderPage } from "@/pages/placeholder";
 
 const queryClient = new QueryClient({
@@ -44,6 +45,7 @@ export function App() {
                 <Route path="/persons" element={<PersonsPage />} />
                 <Route path="/persons/:id" element={<PersonDetailPage />} />
                 <Route path="/cases" element={<PlaceholderPage title="cases" />} />
+                <Route path="/cases/:id" element={<CaseDetailPage />} />
                 <Route path="/matters" element={<PlaceholderPage title="matters" />} />
                 <Route path="/calendar" element={<PlaceholderPage title="calendar" />} />
                 <Route path="/filings" element={<PlaceholderPage title="filings" />} />

@@ -99,14 +99,63 @@ export interface Person {
   updatedAt: string;
 }
 
+export enum MovementType {
+  COMPLAINT = "COMPLAINT",
+  ANSWER = "ANSWER",
+  RESOLUTION = "RESOLUTION",
+  JUDGMENT = "JUDGMENT",
+  NOTIFICATION = "NOTIFICATION",
+  HEARING = "HEARING",
+  OTHER = "OTHER",
+}
+
+export enum ErrandType {
+  SERVICE_NOTICE = "SERVICE_NOTICE",
+  COURT_ORDER_WRIT = "COURT_ORDER_WRIT",
+  OFFICIAL_LETTER = "OFFICIAL_LETTER",
+  ROGATORY_LETTER = "ROGATORY_LETTER",
+  OTHER = "OTHER",
+}
+
+export enum ErrandStatus {
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+}
+
 export interface Movement {
   id: string;
   firmId: string;
   caseId: string | null;
   matterId: string | null;
   title: string;
+  movementType: MovementType;
   description: string | null;
   occurredAt: string;
+  volume: string | null;
+  page: string | null;
+  documentName: string | null;
+  documentUrl: string | null;
+  createdByName: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface Errand {
+  id: string;
+  firmId: string;
+  caseId: string;
+  errandType: ErrandType;
+  status: ErrandStatus;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  dueAt: string | null;
+  completedAt: string | null;
+  notes: string | null;
+  createReminder: boolean;
   createdBy: string;
   createdAt: string;
   updatedBy: string;

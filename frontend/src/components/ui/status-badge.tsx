@@ -24,6 +24,14 @@ const statusVariantMap: Record<string, BadgeVariant> = {
   CANCELLED: "neutral",
   // Errand statuses
   FAILED: "danger",
+  // Movement types
+  COMPLAINT: "info",
+  ANSWER: "info",
+  RESOLUTION: "warning",
+  JUDGMENT: "success",
+  NOTIFICATION: "default",
+  HEARING: "warning",
+  OTHER: "neutral",
 };
 
 // Mapeo de status a texto en español
@@ -43,7 +51,7 @@ const statusLabelMap: Record<string, string> = {
   COMPLETED: "Finalizado",
   PENDING: "Pendiente",
   CANCELLED: "Cancelado",
-  FAILED: "Fallido",
+  FAILED: "Fallida",
 };
 
 const variantStyles: Record<BadgeVariant, string> = {
