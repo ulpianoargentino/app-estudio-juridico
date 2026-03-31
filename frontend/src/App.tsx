@@ -11,6 +11,7 @@ import { DashboardPage } from "@/pages/dashboard";
 import { PersonsPage } from "@/pages/persons";
 import { PersonDetailPage } from "@/pages/persons/person-detail";
 import { PlaceholderPage } from "@/pages/placeholder";
+import { ReportsPage } from "@/pages/reports";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,7 +48,7 @@ export function App() {
                 <Route path="/matters" element={<PlaceholderPage title="matters" />} />
                 <Route path="/calendar" element={<PlaceholderPage title="calendar" />} />
                 <Route path="/filings" element={<PlaceholderPage title="filings" />} />
-                <Route path="/reports" element={<PlaceholderPage title="reports" />} />
+                <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/settings" element={<PlaceholderPage title="settings" />} />
               </Route>
 
