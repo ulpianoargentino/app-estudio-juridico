@@ -2,49 +2,21 @@
 // The rest of the application NEVER calls the Anthropic API directly.
 // All AI interactions go through this service.
 
-export class AIService {
-  // Genera borrador de escrito judicial a partir de datos del expediente y plantilla
-  async generateFiling(
-    caseData: unknown,
-    templateId: string,
-    filingType: string
-  ): Promise<string> {
-    // TODO: Implement via Anthropic API
-    throw new Error("Not implemented: generateFiling");
-  }
+export { sendMessage } from "./llm-client";
+export type { LLMMessage, LLMTool, LLMResponse } from "./llm-client";
 
-  // Analiza un documento subido
-  async analyzeDocument(documentContent: string): Promise<unknown> {
-    // TODO: Implement via Anthropic API
-    throw new Error("Not implemented: analyzeDocument");
-  }
+export { allTools } from "./tools";
 
-  // Búsqueda semántica de jurisprudencia relevante
-  async searchJurisprudence(query: string): Promise<unknown[]> {
-    // TODO: Implement via Anthropic API
-    throw new Error("Not implemented: searchJurisprudence");
-  }
+export { executeTool } from "./tool-executor";
 
-  // Sugiere acciones procesales según el estado del expediente
-  async suggestNextSteps(caseData: unknown): Promise<string[]> {
-    // TODO: Implement via Anthropic API
-    throw new Error("Not implemented: suggestNextSteps");
-  }
+export {
+  SYSTEM_PROMPT_CONTEXTUAL_CHAT,
+  SYSTEM_PROMPT_GENERATE_FILING,
+  SYSTEM_PROMPT_ANALYZE_DOCUMENT,
+  SYSTEM_PROMPT_SEARCH_JURISPRUDENCE,
+  SYSTEM_PROMPT_SUGGEST_NEXT_STEPS,
+  SYSTEM_PROMPT_ALERT_EXPIRATION,
+  buildContextualSystemPrompt,
+} from "./prompts";
 
-  // Detecta riesgo de caducidad/prescripción
-  async alertExpiration(caseData: unknown): Promise<unknown> {
-    // TODO: Implement via Anthropic API
-    throw new Error("Not implemented: alertExpiration");
-  }
-
-  // Chat libre con contexto del expediente
-  async contextualChat(
-    message: string,
-    caseContext: unknown
-  ): Promise<string> {
-    // TODO: Implement via Anthropic API
-    throw new Error("Not implemented: contextualChat");
-  }
-}
-
-export const aiService = new AIService();
+export { contextualChat } from "./contextual-chat";

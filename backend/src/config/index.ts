@@ -14,6 +14,7 @@ export const config = {
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || "",
+    model: process.env.AI_MODEL || "claude-sonnet-4-20250514",
   },
   cors: {
     origin: process.env.CORS_ORIGIN || "http://localhost:5173",
