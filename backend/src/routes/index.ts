@@ -4,6 +4,8 @@ import personRoutes from "./person.routes";
 import courtRoutes from "./court.routes";
 import caseRoutes from "./case.routes";
 import matterRoutes from "./matter.routes";
+import templateRoutes from "./template.routes";
+import filingRoutes from "./filing.routes";
 import { authMiddleware } from "../middleware/auth";
 import { firmContextMiddleware } from "../middleware/firm-context";
 
@@ -23,5 +25,7 @@ router.use("/persons", ...protect, personRoutes);
 router.use("/courts", ...protect, courtRoutes);
 router.use("/cases", ...protect, caseRoutes);
 router.use("/matters", ...protect, matterRoutes);
+router.use("/templates", ...protect, templateRoutes);
+router.use("/filings", ...protect, filingRoutes);
 
 export default router;

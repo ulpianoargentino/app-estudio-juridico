@@ -11,6 +11,9 @@ import { DashboardPage } from "@/pages/dashboard";
 import { PersonsPage } from "@/pages/persons";
 import { PersonDetailPage } from "@/pages/persons/person-detail";
 import { PlaceholderPage } from "@/pages/placeholder";
+import { FilingsPage } from "@/pages/filings";
+import { GenerateFilingPage } from "@/pages/filings/generate-filing";
+import { TemplatesListPage } from "@/pages/filings/templates-list";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,7 +49,11 @@ export function App() {
                 <Route path="/cases" element={<PlaceholderPage title="cases" />} />
                 <Route path="/matters" element={<PlaceholderPage title="matters" />} />
                 <Route path="/calendar" element={<PlaceholderPage title="calendar" />} />
-                <Route path="/filings" element={<PlaceholderPage title="filings" />} />
+                <Route path="/filings" element={<FilingsPage />}>
+                  <Route index element={<Navigate to="/filings/generate" replace />} />
+                  <Route path="generate" element={<GenerateFilingPage />} />
+                  <Route path="templates" element={<TemplatesListPage />} />
+                </Route>
                 <Route path="/reports" element={<PlaceholderPage title="reports" />} />
                 <Route path="/settings" element={<PlaceholderPage title="settings" />} />
               </Route>
