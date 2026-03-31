@@ -20,3 +20,7 @@ export {
 } from "./prompts";
 
 export { contextualChat } from "./contextual-chat";
+export { generateFiling } from "./generate-filing";
+export { suggestNextSteps } from "./suggest-next-steps";
+export type { Suggestion } from "./suggest-next-steps";
+export { analyzeDocument } from "./analyze-document";

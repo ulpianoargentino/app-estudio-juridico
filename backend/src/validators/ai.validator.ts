@@ -12,3 +12,18 @@ export const chatSchema = z.object({
   caseId: z.string().optional(),
   matterId: z.string().optional(),
 });
+
+export const generateFilingSchema = z.object({
+  caseId: z.string().min(1, "El expediente es obligatorio"),
+  filingType: z.string().min(1, "El tipo de escrito es obligatorio"),
+  instructions: z.string().optional(),
+});
+
+export const suggestNextStepsSchema = z.object({
+  caseId: z.string().min(1, "El expediente es obligatorio"),
+});
+
+export const analyzeDocumentSchema = z.object({
+  documentContent: z.string().min(1, "El contenido del documento es obligatorio"),
+  caseId: z.string().optional(),
+});
