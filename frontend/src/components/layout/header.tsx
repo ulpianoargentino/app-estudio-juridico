@@ -1,7 +1,8 @@
 import { useTheme } from "@/contexts/theme-context";
 import { es } from "@/i18n/es";
 import { Button } from "@/components/ui/button";
-import { Bell, Bot, Menu, Moon, Sun } from "lucide-react";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
+import { Bot, Menu, Moon, Sun } from "lucide-react";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -39,10 +40,7 @@ export function Header({ onMenuClick, showMenuButton }: HeaderProps) {
 
       <div className="flex items-center gap-1">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          <span className="sr-only">{es.header.notifications}</span>
-        </Button>
+        <NotificationDropdown />
 
         {/* AI assistant */}
         <Button variant="ghost" size="icon">

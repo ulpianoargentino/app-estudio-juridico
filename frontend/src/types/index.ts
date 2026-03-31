@@ -129,6 +129,26 @@ export interface Event {
   updatedAt: string;
 }
 
+export enum NotificationType {
+  PORTAL_UPDATE = "PORTAL_UPDATE",
+  DEADLINE_REMINDER = "DEADLINE_REMINDER",
+  SYSTEM = "SYSTEM",
+}
+
+export interface Notification {
+  id: string;
+  firmId: string;
+  userId: string;
+  title: string;
+  message: string;
+  notificationType: NotificationType;
+  referenceType: string | null;
+  referenceId: string | null;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
 // API response types
 
 export interface PaginationMeta {

@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { config } from "./config";
 import routes from "./routes";
 import { errorHandler } from "./middleware/error-handler";
+import { startDeadlineReminderCron } from "./cron/deadline-reminder";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.listen(config.port, () => {
   console.log(
     `Server running on port ${config.port} in ${config.nodeEnv} mode`
   );
+  startDeadlineReminderCron();
 });
 
 export default app;

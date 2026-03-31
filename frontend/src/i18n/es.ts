@@ -136,6 +136,22 @@ export const es = {
     hearing: "Audiencia",
     deadline: "Vencimiento",
   },
+  notifications: {
+    title: "Notificaciones",
+    empty: "No tenés notificaciones",
+    emptyUnread: "No tenés notificaciones sin leer",
+    markAllAsRead: "Marcar todas como leídas",
+    viewAll: "Ver todas las notificaciones",
+    filterAll: "Todas",
+    filterUnread: "No leídas",
+    justNow: "Ahora",
+    ago: "Hace",
+    yesterday: "Ayer",
+    days: "días",
+    portalUpdate: "Novedad en portal",
+    deadlineReminder: "Recordatorio de vencimiento",
+    system: "Sistema",
+  },
 } as const;
 
 export type TranslationKeys = typeof es;
