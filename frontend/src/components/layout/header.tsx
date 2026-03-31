@@ -1,4 +1,5 @@
 import { useTheme } from "@/contexts/theme-context";
+import { useChat } from "@/contexts/chat-context";
 import { es } from "@/i18n/es";
 import { Button } from "@/components/ui/button";
 import { Bell, Bot, Menu, Moon, Sun } from "lucide-react";
@@ -19,6 +20,7 @@ function formatDate(date: Date): string {
 
 export function Header({ onMenuClick, showMenuButton }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
+  const { openChat } = useChat();
   const today = formatDate(new Date());
   // Capitalizar primera letra
   const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
@@ -45,7 +47,7 @@ export function Header({ onMenuClick, showMenuButton }: HeaderProps) {
         </Button>
 
         {/* AI assistant */}
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" onClick={() => openChat()}>
           <Bot className="h-4 w-4" />
           <span className="sr-only">{es.header.aiAssistant}</span>
         </Button>

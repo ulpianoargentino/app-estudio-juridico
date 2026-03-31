@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { ChatProvider } from "@/contexts/chat-context";
+import { ChatPanel } from "@/components/ai/chat-panel";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppLayout } from "@/components/layout/app-layout";
 import { LoginPage } from "@/pages/login";
@@ -26,6 +28,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
+          <ChatProvider>
           <BrowserRouter>
             <Routes>
               {/* Rutas públicas */}
@@ -55,7 +58,9 @@ export function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </BrowserRouter>
+          <ChatPanel />
           <Toaster richColors position="top-right" />
+          </ChatProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

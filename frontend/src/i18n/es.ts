@@ -136,6 +136,15 @@ export const es = {
     hearing: "Audiencia",
     deadline: "Vencimiento",
   },
+  ai: {
+    title: "Asistente IA",
+    newChat: "Nuevo chat",
+    placeholder: "Escribí tu consulta...",
+    thinking: "Pensando...",
+    emptyState: "Hacé una consulta sobre tus expedientes, plazos, o cualquier tema jurídico.",
+    errorMessage: "Ocurrió un error al procesar tu consulta. Por favor, intentá de nuevo.",
+    consultAI: "Consultar IA",
+  },
 } as const;
 
 export type TranslationKeys = typeof es;
