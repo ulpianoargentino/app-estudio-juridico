@@ -94,3 +94,53 @@ export async function me(
     next(err);
   }
 }
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "La contraseña actual es obligatoria"),
+  newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres"),
+});
+
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: formatZodError(parsed.error) });
+      return;
+    }
+    await authService.changePassword(
+      req.user!.userId,
+      parsed.data.currentPassword,
+      parsed.data.newPassword
+    );
+    res.json({ data: { message: "Contraseña actualizada" } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1, "El nombre es obligatorio").optional(),
+  lastName: z.string().min(1, "El apellido es obligatorio").optional(),
+});
+
+export async function updateProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const parsed = updateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: formatZodError(parsed.error) });
+      return;
+    }
+    const user = await authService.updateProfile(req.user!.userId, parsed.data);
+    res.json({ data: { user } });
+  } catch (err) {
+    next(err);
+  }
+}

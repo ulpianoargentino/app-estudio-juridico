@@ -35,3 +35,18 @@ export async function getMe(): Promise<AuthUser> {
   const res = await apiClient.get<{ user: AuthUser }>("/auth/me");
   return res.data.user;
 }
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await apiClient.put("/auth/change-password", { currentPassword, newPassword });
+}
+
+export async function updateProfile(data: {
+  firstName?: string;
+  lastName?: string;
+}): Promise<AuthUser> {
+  const res = await apiClient.put<{ user: AuthUser }>("/auth/profile", data);
+  return res.data.user;
+}

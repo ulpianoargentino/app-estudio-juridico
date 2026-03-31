@@ -188,6 +188,63 @@ export function logout(res: Response): void {
   });
 }
 
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const result = await db
+    .select({ id: users.id, passwordHash: users.passwordHash })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  const user = result[0];
+  if (!user) {
+    throw new AppError(404, "USER_NOT_FOUND", "Usuario no encontrado");
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new AppError(400, "WRONG_PASSWORD", "La contraseña actual es incorrecta");
+  }
+
+  const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await db
+    .update(users)
+    .set({ passwordHash: newHash, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function updateProfile(
+  userId: string,
+  data: { firstName?: string; lastName?: string }
+): Promise<UserResponse> {
+  const [existing] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!existing) {
+    throw new AppError(404, "USER_NOT_FOUND", "Usuario no encontrado");
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+
+  const firmResult = await db
+    .select({ id: firms.id, name: firms.name })
+    .from(firms)
+    .where(eq(firms.id, updated!.firmId))
+    .limit(1);
+
+  return formatUser(updated!, firmResult[0]!);
+}
+
 export async function getCurrentUser(userId: string): Promise<UserResponse> {
   const result = await db
     .select({
