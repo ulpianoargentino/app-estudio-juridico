@@ -2,7 +2,7 @@ import { eq, and, or, ilike, sql, asc, desc, count } from "drizzle-orm";
 import { db } from "../db";
 import { persons, parties, cases, matters } from "../models";
 import { uuidv7 } from "../utils/uuid";
-import { AppError } from "../middleware/error-handler";
+import { NotFoundError, ConflictError } from "../utils/errors";
 
 interface CreatePersonData {
   personType: string;
@@ -141,7 +141,7 @@ export async function findById(firmId: string, id: string) {
     .limit(1);
 
   if (!person) {
-    throw new AppError(404, "PERSON_NOT_FOUND", "Persona no encontrada");
+    throw new NotFoundError("PERSON_NOT_FOUND", "Persona no encontrada");
   }
 
   // Obtener vinculaciones a cases y matters con roles
@@ -179,7 +179,7 @@ export async function update(
     .limit(1);
 
   if (!existing) {
-    throw new AppError(404, "PERSON_NOT_FOUND", "Persona no encontrada");
+    throw new NotFoundError("PERSON_NOT_FOUND", "Persona no encontrada");
   }
 
   const [updated] = await db
@@ -204,7 +204,7 @@ export async function softDelete(firmId: string, id: string, userId: string) {
     .limit(1);
 
   if (!existing) {
-    throw new AppError(404, "PERSON_NOT_FOUND", "Persona no encontrada");
+    throw new NotFoundError("PERSON_NOT_FOUND", "Persona no encontrada");
   }
 
   // Verificar que no tenga partes vinculadas activas
@@ -217,8 +217,7 @@ export async function softDelete(firmId: string, id: string, userId: string) {
     .limit(1);
 
   if (activeParty) {
-    throw new AppError(
-      409,
+    throw new ConflictError(
       "PERSON_HAS_LINKS",
       "No se puede eliminar: la persona tiene vinculaciones activas a expedientes o casos"
     );

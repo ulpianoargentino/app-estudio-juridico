@@ -2,7 +2,7 @@ import { eq, and, or, ilike, asc, desc, count, gte, sql } from "drizzle-orm";
 import { db } from "../db";
 import { cases, persons, users, courts, parties, movements, documents, events } from "../models";
 import { uuidv7 } from "../utils/uuid";
-import { AppError } from "../middleware/error-handler";
+import { AppError, NotFoundError } from "../utils/errors";
 
 interface CreateCaseData {
   caseNumber?: string | null;
@@ -218,7 +218,7 @@ export async function findById(firmId: string, id: string) {
     .where(and(eq(cases.id, id), eq(cases.firmId, firmId)))
     .limit(1);
 
-  if (!caseRow) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+  if (!caseRow) throw new NotFoundError("CASE_NOT_FOUND", "Expediente no encontrado");
 
   // Parallel fetches for related data
   const [
@@ -280,7 +280,7 @@ export async function update(firmId: string, id: string, data: Partial<CreateCas
     .from(cases)
     .where(and(eq(cases.id, id), eq(cases.firmId, firmId)))
     .limit(1);
-  if (!existing) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+  if (!existing) throw new NotFoundError("CASE_NOT_FOUND", "Expediente no encontrado");
 
   await validateRelations(firmId, data as CreateCaseData);
 
@@ -304,7 +304,7 @@ export async function softDelete(firmId: string, id: string, userId: string) {
     .from(cases)
     .where(and(eq(cases.id, id), eq(cases.firmId, firmId)))
     .limit(1);
-  if (!existing) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+  if (!existing) throw new NotFoundError("CASE_NOT_FOUND", "Expediente no encontrado");
 
   await db
     .update(cases)

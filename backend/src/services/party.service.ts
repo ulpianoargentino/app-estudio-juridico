@@ -2,7 +2,7 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { parties, persons, cases, matters } from "../models";
 import { uuidv7 } from "../utils/uuid";
-import { AppError } from "../middleware/error-handler";
+import { AppError, NotFoundError, ConflictError } from "../utils/errors";
 
 interface AddPartyData {
   personId: string;
@@ -18,18 +18,18 @@ export async function addParty(
   // Validar que la persona pertenezca al firm
   const [person] = await db.select({ id: persons.id }).from(persons)
     .where(and(eq(persons.id, data.personId), eq(persons.firmId, firmId))).limit(1);
-  if (!person) throw new AppError(400, "INVALID_PERSON", "La persona no pertenece a este estudio");
+  if (!person) throw new AppError(400, "INVALID_PERSON", "La persona no pertenece a este estudio o no existe");
 
   // Validar que el case o matter pertenezca al firm
   if (data.caseId) {
     const [c] = await db.select({ id: cases.id }).from(cases)
       .where(and(eq(cases.id, data.caseId), eq(cases.firmId, firmId))).limit(1);
-    if (!c) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+    if (!c) throw new NotFoundError("CASE_NOT_FOUND", "Expediente no encontrado");
   }
   if (data.matterId) {
     const [m] = await db.select({ id: matters.id }).from(matters)
       .where(and(eq(matters.id, data.matterId), eq(matters.firmId, firmId))).limit(1);
-    if (!m) throw new AppError(404, "MATTER_NOT_FOUND", "Caso no encontrado");
+    if (!m) throw new NotFoundError("MATTER_NOT_FOUND", "Caso no encontrado");
   }
 
   // Verificar duplicado: misma persona + mismo case/matter + mismo rol
@@ -43,7 +43,7 @@ export async function addParty(
 
   const [dup] = await db.select({ id: parties.id }).from(parties)
     .where(and(...dupConditions)).limit(1);
-  if (dup) throw new AppError(409, "PARTY_EXISTS", "Esta persona ya tiene ese rol en este expediente/caso");
+  if (dup) throw new ConflictError("PARTY_EXISTS", "Esta persona ya tiene ese rol en este expediente/caso");
 
   const id = uuidv7();
   const [created] = await db.insert(parties).values({
@@ -62,7 +62,7 @@ export async function addParty(
 export async function removeParty(firmId: string, partyId: string) {
   const [existing] = await db.select({ id: parties.id }).from(parties)
     .where(and(eq(parties.id, partyId), eq(parties.firmId, firmId))).limit(1);
-  if (!existing) throw new AppError(404, "PARTY_NOT_FOUND", "Vinculación no encontrada");
+  if (!existing) throw new NotFoundError("PARTY_NOT_FOUND", "Vinculación no encontrada");
 
   await db.delete(parties).where(and(eq(parties.id, partyId), eq(parties.firmId, firmId)));
 }

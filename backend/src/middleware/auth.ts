@@ -31,9 +31,15 @@ export function authMiddleware(
       role: payload.role,
     };
     next();
-  } catch {
+  } catch (err) {
+    const isExpired = err instanceof jwt.TokenExpiredError;
     res.status(401).json({
-      error: { code: "UNAUTHORIZED", message: "No autenticado" },
+      error: {
+        code: isExpired ? "TOKEN_EXPIRED" : "UNAUTHORIZED",
+        message: isExpired
+          ? "La sesión ha expirado, por favor ingresá nuevamente"
+          : "No autenticado",
+      },
     });
   }
 }

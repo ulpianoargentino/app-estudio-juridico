@@ -2,7 +2,7 @@ import { eq, and, or, ilike, asc, desc, count } from "drizzle-orm";
 import { db } from "../db";
 import { courts } from "../models";
 import { uuidv7 } from "../utils/uuid";
-import { AppError } from "../middleware/error-handler";
+import { NotFoundError } from "../utils/errors";
 
 interface CreateCourtData {
   name: string;
@@ -82,7 +82,7 @@ export async function findById(firmId: string, id: string) {
     .from(courts)
     .where(and(eq(courts.id, id), eq(courts.firmId, firmId)))
     .limit(1);
-  if (!court) throw new AppError(404, "COURT_NOT_FOUND", "Juzgado no encontrado");
+  if (!court) throw new NotFoundError("COURT_NOT_FOUND", "Juzgado no encontrado");
   return court;
 }
 
@@ -92,7 +92,7 @@ export async function update(firmId: string, id: string, data: Partial<CreateCou
     .from(courts)
     .where(and(eq(courts.id, id), eq(courts.firmId, firmId)))
     .limit(1);
-  if (!existing) throw new AppError(404, "COURT_NOT_FOUND", "Juzgado no encontrado");
+  if (!existing) throw new NotFoundError("COURT_NOT_FOUND", "Juzgado no encontrado");
 
   const [updated] = await db
     .update(courts)
@@ -108,7 +108,7 @@ export async function softDelete(firmId: string, id: string, userId: string) {
     .from(courts)
     .where(and(eq(courts.id, id), eq(courts.firmId, firmId)))
     .limit(1);
-  if (!existing) throw new AppError(404, "COURT_NOT_FOUND", "Juzgado no encontrado");
+  if (!existing) throw new NotFoundError("COURT_NOT_FOUND", "Juzgado no encontrado");
 
   await db
     .update(courts)

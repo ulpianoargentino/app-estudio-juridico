@@ -1,15 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod/v4";
 import * as courtService from "../services/court.service";
 import { createCourtSchema, updateCourtSchema, queryCourtSchema } from "../validators/court.validator";
-
-function formatZodError(error: z.ZodError) {
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details: error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
-  };
-}
+import { formatZodError } from "../utils/format-validation-error";
 
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

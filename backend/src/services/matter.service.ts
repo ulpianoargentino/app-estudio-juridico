@@ -3,7 +3,7 @@ import { db } from "../db";
 import { matters, persons, users, cases, parties, movements, documents, events } from "../models";
 import { matterStatus } from "../models/enums";
 import { uuidv7 } from "../utils/uuid";
-import { AppError } from "../middleware/error-handler";
+import { AppError, NotFoundError, ConflictError } from "../utils/errors";
 
 interface CreateMatterData {
   title: string;
@@ -157,7 +157,7 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
 export async function findById(firmId: string, id: string) {
   const [matter] = await db.select().from(matters)
     .where(and(eq(matters.id, id), eq(matters.firmId, firmId))).limit(1);
-  if (!matter) throw new AppError(404, "MATTER_NOT_FOUND", "Caso no encontrado");
+  if (!matter) throw new NotFoundError("MATTER_NOT_FOUND", "Caso no encontrado");
 
   const [clientData, attorneyData, partyLinks, movementCount, documentCount] = await Promise.all([
     matter.primaryClientId
@@ -190,7 +190,7 @@ export async function findById(firmId: string, id: string) {
 export async function update(firmId: string, id: string, data: Partial<CreateMatterData>, userId: string) {
   const [existing] = await db.select({ id: matters.id }).from(matters)
     .where(and(eq(matters.id, id), eq(matters.firmId, firmId))).limit(1);
-  if (!existing) throw new AppError(404, "MATTER_NOT_FOUND", "Caso no encontrado");
+  if (!existing) throw new NotFoundError("MATTER_NOT_FOUND", "Caso no encontrado");
 
   await validateRelations(firmId, data);
 
@@ -205,7 +205,7 @@ export async function update(firmId: string, id: string, data: Partial<CreateMat
 export async function softDelete(firmId: string, id: string, userId: string) {
   const [existing] = await db.select({ id: matters.id }).from(matters)
     .where(and(eq(matters.id, id), eq(matters.firmId, firmId))).limit(1);
-  if (!existing) throw new AppError(404, "MATTER_NOT_FOUND", "Caso no encontrado");
+  if (!existing) throw new NotFoundError("MATTER_NOT_FOUND", "Caso no encontrado");
 
   await db.update(matters).set({ isActive: false, updatedBy: userId, updatedAt: new Date() })
     .where(and(eq(matters.id, id), eq(matters.firmId, firmId)));
@@ -214,8 +214,8 @@ export async function softDelete(firmId: string, id: string, userId: string) {
 export async function convertToCase(firmId: string, matterId: string, caseData: ConvertToCaseData, userId: string) {
   const [matter] = await db.select().from(matters)
     .where(and(eq(matters.id, matterId), eq(matters.firmId, firmId))).limit(1);
-  if (!matter) throw new AppError(404, "MATTER_NOT_FOUND", "Caso no encontrado");
-  if (matter.convertedToCaseId) throw new AppError(409, "ALREADY_CONVERTED", "Este caso ya fue convertido a expediente");
+  if (!matter) throw new NotFoundError("MATTER_NOT_FOUND", "Caso no encontrado");
+  if (matter.convertedToCaseId) throw new ConflictError("ALREADY_CONVERTED", "Este caso ya fue convertido a expediente");
 
   const caseId = uuidv7();
 

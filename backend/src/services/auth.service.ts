@@ -7,7 +7,7 @@ import { firms, users } from "../models";
 import { userRole, type UserRole } from "../models/enums";
 import { config } from "../config";
 import { uuidv7 } from "../utils/uuid";
-import { AppError } from "../middleware/error-handler";
+import { AppError, NotFoundError, ConflictError, AuthenticationError } from "../utils/errors";
 
 const BCRYPT_ROUNDS = 12;
 const JWT_EXPIRES_IN = "7d";
@@ -71,7 +71,7 @@ export async function register(
     .limit(1);
 
   if (existing.length > 0) {
-    throw new AppError(409, "EMAIL_EXISTS", "Este email ya está registrado");
+    throw new ConflictError("EMAIL_EXISTS", "Este email ya está registrado");
   }
 
   const firmId = uuidv7();
@@ -134,28 +134,16 @@ export async function login(
   const user = result[0];
 
   if (!user) {
-    throw new AppError(
-      401,
-      "INVALID_CREDENTIALS",
-      "Email o contraseña incorrectos"
-    );
+    throw new AuthenticationError("Email o contraseña incorrectos");
   }
 
   if (!user.isActive) {
-    throw new AppError(
-      401,
-      "INVALID_CREDENTIALS",
-      "Email o contraseña incorrectos"
-    );
+    throw new AuthenticationError("Email o contraseña incorrectos");
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
-    throw new AppError(
-      401,
-      "INVALID_CREDENTIALS",
-      "Email o contraseña incorrectos"
-    );
+    throw new AuthenticationError("Email o contraseña incorrectos");
   }
 
   // Obtener datos del firm
@@ -204,7 +192,7 @@ export async function getCurrentUser(userId: string): Promise<UserResponse> {
 
   const user = result[0];
   if (!user) {
-    throw new AppError(404, "USER_NOT_FOUND", "Usuario no encontrado");
+    throw new NotFoundError("USER_NOT_FOUND", "Usuario no encontrado");
   }
 
   const firmResult = await db

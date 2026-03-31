@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod/v4";
 import * as authService from "../services/auth.service";
+import { formatZodError } from "../utils/format-validation-error";
 
 const registerSchema = z.object({
   email: z.email("Email inválido"),
@@ -14,22 +15,6 @@ const loginSchema = z.object({
   email: z.email("Email inválido"),
   password: z.string().min(1, "La contraseña es obligatoria"),
 });
-
-function formatZodError(error: z.ZodError): {
-  code: string;
-  message: string;
-  details: Array<{ field: string; message: string }>;
-} {
-  const details = error.issues.map((issue) => ({
-    field: issue.path.join("."),
-    message: issue.message,
-  }));
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details,
-  };
-}
 
 export async function register(
   req: Request,

@@ -1,15 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod/v4";
 import * as partyService from "../services/party.service";
 import { addPartySchema } from "../validators/party.validator";
-
-function formatZodError(error: z.ZodError) {
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details: error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
-  };
-}
+import { formatZodError } from "../utils/format-validation-error";
 
 // Cases
 export async function addPartyToCase(req: Request, res: Response, next: NextFunction): Promise<void> {

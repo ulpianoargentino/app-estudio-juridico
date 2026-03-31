@@ -136,6 +136,20 @@ export const es = {
     hearing: "Audiencia",
     deadline: "Vencimiento",
   },
+  errors: {
+    generic: "Ocurrió un error inesperado",
+    networkError: "Error de conexión. Verificá tu conexión a internet.",
+    sessionExpired: "La sesión ha expirado. Por favor, ingresá nuevamente.",
+    forbidden: "No tenés permisos para realizar esta acción.",
+    notFound: "El recurso solicitado no fue encontrado.",
+    validationError: "Los datos ingresados no son válidos.",
+    conflict: "La operación no se pudo completar porque entra en conflicto con datos existentes.",
+    serverError: "Error interno del servidor. Intentá de nuevo más tarde.",
+    boundaryTitle: "Algo salió mal",
+    boundaryDescription: "Ocurrió un error inesperado. Podés intentar de nuevo o volver al inicio.",
+    retry: "Intentar de nuevo",
+    goHome: "Volver al inicio",
+  },
 } as const;
 
 export type TranslationKeys = typeof es;
