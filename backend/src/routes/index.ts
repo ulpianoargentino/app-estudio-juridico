@@ -4,6 +4,7 @@ import personRoutes from "./person.routes";
 import courtRoutes from "./court.routes";
 import caseRoutes from "./case.routes";
 import matterRoutes from "./matter.routes";
+import portalRoutes from "./portal.routes";
 import { authMiddleware } from "../middleware/auth";
 import { firmContextMiddleware } from "../middleware/firm-context";
 
@@ -23,5 +24,6 @@ router.use("/persons", ...protect, personRoutes);
 router.use("/courts", ...protect, courtRoutes);
 router.use("/cases", ...protect, caseRoutes);
 router.use("/matters", ...protect, matterRoutes);
+router.use("/portals", ...protect, portalRoutes);
 
 export default router;

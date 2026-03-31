@@ -14,3 +14,4 @@ export * from "./templates";
 export * from "./notifications";
 export * from "./case-links";
 export * from "./portal-credentials";
+export * from "./sync-logs";
