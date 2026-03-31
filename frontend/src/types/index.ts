@@ -49,6 +49,21 @@ export enum UserRole {
   USER = "USER",
 }
 
+export enum EventType {
+  HEARING = "HEARING",
+  DEADLINE = "DEADLINE",
+  MEETING = "MEETING",
+  MEDIATION = "MEDIATION",
+  COURT_VISIT = "COURT_VISIT",
+  OTHER = "OTHER",
+}
+
+export enum EventStatus {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+}
+
 // Interfaces
 
 export interface User {
@@ -118,11 +133,19 @@ export interface Event {
   firmId: string;
   caseId: string | null;
   matterId: string | null;
+  eventType: EventType;
   title: string;
   description: string | null;
-  startsAt: string;
-  endsAt: string | null;
-  isDeadline: boolean;
+  eventDate: string;
+  eventTime: string | null;
+  endDate: string | null;
+  endTime: string | null;
+  isAllDay: boolean;
+  assignedToId: string | null;
+  assignedToName: string | null;
+  status: EventStatus;
+  caseTitle: string | null;
+  matterTitle: string | null;
   createdBy: string;
   createdAt: string;
   updatedBy: string;
