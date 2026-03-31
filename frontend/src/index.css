@@ -124,3 +124,112 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* TipTap Rich Text Editor */
+.rich-text-editor-content {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  line-height: 1.5;
+  min-height: 500px;
+  padding: 2rem 2.5rem;
+  outline: none;
+}
+
+.rich-text-editor-content h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-content h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.rich-text-editor-content h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.rich-text-editor-content p {
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+.rich-text-editor-content blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 0.75rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.rich-text-editor-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+.rich-text-editor-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.rich-text-editor-content th,
+.rich-text-editor-content td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  min-width: 80px;
+}
+
+.rich-text-editor-content th {
+  background-color: var(--muted);
+  font-weight: 600;
+}
+
+.rich-text-editor-content .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  height: 0;
+}
+
+/* Selected table cell highlight */
+.rich-text-editor-content .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rich-text-editor-content td,
+.rich-text-editor-content th {
+  position: relative;
+}
