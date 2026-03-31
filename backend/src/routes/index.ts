@@ -1,5 +1,6 @@
 import { Router } from "express";
 import authRoutes from "./auth.routes";
+import dashboardRoutes from "./dashboard.routes";
 import personRoutes from "./person.routes";
 import courtRoutes from "./court.routes";
 import caseRoutes from "./case.routes";
@@ -19,6 +20,7 @@ router.use("/auth", authRoutes);
 
 // Protected routes — auth + firm context
 const protect = [authMiddleware, firmContextMiddleware];
+router.use("/dashboard", ...protect, dashboardRoutes);
 router.use("/persons", ...protect, personRoutes);
 router.use("/courts", ...protect, courtRoutes);
 router.use("/cases", ...protect, caseRoutes);
