@@ -8,7 +8,17 @@
 
 SaaS de gestión jurídica integral para abogados argentinos. Combina gestión de expedientes (inspirado en Lex Doctor), asistencia con IA (API de Claude) y consulta automática de portales judiciales. Construido por un fundador solo (abogado, no programador) usando Claude Code.
 
-**Estado actual:** Pre-desarrollo. Specs y arquitectura definidas, todavía no hay código.
+**Estado actual:** en desarrollo activo. Autenticación + multi-tenancy funcionales. Backend CRUD completo para 6 dominios (auth, personas, juzgados, expedientes, otros casos, partes). UI solo tiene login/register/dashboard; el resto son placeholders. Los dos diferenciales del producto (asistente de IA y scraper de portales) son stubs sin implementar.
+
+---
+
+## Documentos de referencia
+
+Hay 3 documentos de especificación en [docs/](docs/) que describen el producto, la arquitectura y el mercado. Leerlos cuando la tarea en curso los requiera.
+
+- [docs/SPEC_APP_JURIDICA_v1.md](docs/SPEC_APP_JURIDICA_v1.md) — Especificación funcional del producto: visión, público, alcance, MVP (10 funcionalidades), fueros, modelo freemium.
+- [docs/ARQUITECTURA_APP_JURIDICA_v1.md](docs/ARQUITECTURA_APP_JURIDICA_v1.md) — Decisiones técnicas: stack, capa de abstracción del LLM, scraper, multi-tenancy, estados predefinidos.
+- [docs/CONTEXTO_MERCADO_APP_JURIDICA_v1.md](docs/CONTEXTO_MERCADO_APP_JURIDICA_v1.md) — Contexto de mercado: fundador, competencia (Lex Doctor, LitigarOnline, Paralegal.ar), portales judiciales por jurisdicción.
 
 ---
 
@@ -19,15 +29,34 @@ SaaS de gestión jurídica integral para abogados argentinos. Combina gestión d
 | Frontend | React + TypeScript |
 | Backend | Node.js + TypeScript |
 | Base de datos | PostgreSQL |
-| ORM | Pendiente (Prisma o Drizzle) |
-| Almacenamiento de archivos | Compatible con S3 (S3, MinIO o Cloudflare R2) |
+| ORM | Drizzle ORM (con `drizzle-kit` para migraciones) |
+| Librería UI | shadcn/ui + Tailwind v4 |
+| Cliente HTTP (frontend) | axios 1.14 |
+| Estado cliente (frontend) | PENDIENTE — Zustand, Context y React Query están instalados pero sin patrón consistente |
+| Editor de texto rico | PENDIENTE (ninguno instalado) |
+| Almacenamiento de archivos | Compatible con S3 (S3, MinIO o Cloudflare R2). SDK: PENDIENTE (ningún SDK instalado aún) |
 | IA | API de Anthropic (Claude) vía capa de abstracción |
-| Hosting | Nube (pendiente de definición) |
+| Hosting | PENDIENTE |
 | Repositorio | GitHub |
 
 **Arquitectura:** Monolito modular. Un solo servidor Node.js con módulos bien separados internamente. Sin microservicios.
 
 **Multi-tenancy:** Base de datos compartida, aislamiento por columna `firm_id` en todas las tablas. Cada consulta DEBE filtrar por el estudio del usuario autenticado. Ningún usuario puede ver datos de otro estudio.
+
+---
+
+## Decisiones técnicas ya tomadas
+
+- Framework backend: Express 4.21
+- Driver PostgreSQL: `postgres` (postgres-js), no `pg`
+- Autenticación: JWT en cookie httpOnly + bcrypt
+- Validación: Zod v4 (importado como `zod/v4`)
+- Claves primarias: UUIDv7 en columnas `text` (ver `backend/src/utils/uuid.ts`)
+- Middleware de seguridad: helmet + cors + cookie-parser
+- Frontend: React 19 + Vite 6 + TypeScript 5.7
+- Manejo de formularios: PENDIENTE (`react-hook-form` no está instalado)
+- Tema claro/oscuro: implementado vía `theme-context`
+- i18n: archivo único en español en `frontend/src/i18n/es.ts`
 
 ---
 
@@ -256,7 +285,7 @@ Portales objetivo (Fase 1):
 ### Autenticación
 
 - Registro con email + contraseña (sin login social por ahora)
-- JWT o sesiones server-side (pendiente de definición)
+- JWT en cookie httpOnly, 7 días de expiración, firmado con `JWT_SECRET`
 - Dos roles para el MVP: `ADMIN` (acceso total + configuración del estudio) y `USER` (acceso estándar)
 - El primer usuario que se registra crea el estudio y queda como ADMIN
 
@@ -274,7 +303,7 @@ Toda tabla incluye estas columnas desde el día uno:
 
 - Nombres de tablas: inglés, plural, snake_case (`cases`, `parties`, `movements`)
 - Nombres de columnas: inglés, snake_case (`case_title`, `court_id`, `firm_id`)
-- Claves primarias: `id` (UUID o auto-increment, pendiente de definición)
+- Claves primarias: columna `id` de tipo `text` con UUIDv7 generado por `backend/src/utils/uuid.ts`
 - Claves foráneas: `{tabla_referenciada_singular}_id` (ej: `case_id`, `person_id`, `firm_id`)
 - Enums: UPPER_SNAKE_CASE (`IN_PROGRESS`, `PLAINTIFF`, `CIVIL_COMMERCIAL`)
 - Booleanos: prefijo `is_` o `has_` (`is_active`, `has_digital_signature`)
@@ -303,8 +332,41 @@ Toda tabla incluye estas columnas desde el día uno:
 - Navegación en sidebar: Dashboard, Expedientes, Otros Casos, Personas, Agenda, Escritos, Reportes, Configuración
 - Header: fecha, badge de notificaciones, acceso al asistente de IA, perfil de usuario
 - Responsive: sidebar colapsable en móvil, scroll horizontal en tablas
-- Librería de componentes: pendiente (probablemente shadcn/ui)
-- Editor de texto enriquecido: pendiente (probablemente TipTap)
+- Librería de componentes: shadcn/ui (configurado en `frontend/components.json`). Todos los nuevos componentes deben usar esta librería.
+- Editor de texto enriquecido: PENDIENTE DE ELEGIR. Decisión bloqueante para el módulo de Escritos/Plantillas.
+
+---
+
+## Estado actual por módulo
+
+### Módulos funcionales del MVP
+
+| Módulo | Estado | Notas |
+|---|---|---|
+| Autenticación + Firms + Users | **COMPLETO** | Backend + UI (login/register/protected-route). JWT cookies httpOnly, 7 días |
+| Expedientes (Cases) | **BACKEND COMPLETO** | Service + controller + routes con summary. UI `/cases` es placeholder |
+| Otros Casos (Matters) | **BACKEND COMPLETO** | Incluye endpoint `/convert` (crea Case y copia parties, movements, documents, events transaccional). UI placeholder |
+| Directorio de Personas | **BACKEND COMPLETO** | CRUD + `/search`. UI placeholder. `PersonSelect` ya disponible para forms |
+| Partes (Parties) | **BACKEND COMPLETO** | Sub-rutas `/:caseId/parties` y `/:matterId/parties`. Valida duplicados y pertenencia al firm. Sin UI |
+| Juzgados (Courts) | **BACKEND COMPLETO** | CRUD. Sin UI |
+| Agenda y Eventos | **SOLO SCHEMA** | Tabla `events` definida; falta service/controller/route/UI. Regla de auto-agendar audiencias (§Reglas de Negocio Clave #5) sin implementar |
+| Movimientos / Actuaciones | **SOLO SCHEMA** | Tabla con check constraint XOR case/matter. Sin service/controller/route/UI |
+| Gestiones de Procuración (Errands) | **SOLO SCHEMA** | Tabla definida |
+| Gestión Documental (Documents) | **SOLO SCHEMA** | Tabla definida con FK a case/matter/movement. Ningún SDK de storage S3 instalado |
+| Plantillas de Escritos (Templates) | **SOLO SCHEMA** | Tabla con `content` y `variables`. Editor rich-text no instalado |
+| Reportes / Estadísticas | **SIN EMPEZAR** | Solo existe `case.service.getCaseSummary()` por status. Sin UI |
+| Consulta de Portales Judiciales | **STUB** | `backend/src/portal-scraper/index.ts` → `throw new Error("Not implemented")`. Sin librería de scraping instalada. Encriptación de credenciales no implementada |
+| Asistente de IA | **STUB** | `backend/src/ai-service/index.ts` → 6 métodos `throw new Error("Not implemented")`. SDK `@anthropic-ai/sdk` no instalado. Sin tools de DB |
+
+### Infraestructura auxiliar
+
+| Tabla | Estado | Notas |
+|---|---|---|
+| `case_links` | **SOLO SCHEMA** | Vincula expedientes relacionados (conexos, acumulados, incidentes). Faltan `updated_by` y `updated_at` |
+| `notifications` | **SOLO SCHEMA** | Tabla definida, sin endpoints. Campana `<Bell/>` en header sin datos. Faltan `updated_at`, `created_by`, `updated_by` |
+| `portal_credentials` | **SOLO SCHEMA** | Tabla con `username_encrypted`/`password_encrypted`. Sin código de encriptación. Faltan `created_by`, `updated_by` |
+
+**IMPORTANTE:** actualizar estas tablas cada vez que se complete un módulo, para que no se desactualicen.
 
 ---
 
@@ -360,3 +422,12 @@ La arquitectura debe permitir agregar nuevas jurisdicciones provinciales sin red
 - Cada módulo: migración de base de datos → API del backend → UI del frontend → tests
 - Verificar que cada módulo funciona antes de avanzar al siguiente
 - Git: feature branches, commits descriptivos en inglés
+
+---
+
+## Problemas conocidos
+
+- Los tipos en `frontend/src/types/index.ts` están desactualizados respecto al schema real del backend. No usarlos sin regenerarlos primero.
+- Las columnas `username_encrypted` y `password_encrypted` en `portal_credentials` tienen ese nombre pero **no hay código de encriptación implementado**. Encriptar antes de guardar es requisito de seguridad pendiente.
+- Las tablas `notifications`, `case_links` y `portal_credentials` no tienen todos los campos de auditoría que exige este mismo documento. Corregir en la próxima migración.
+- No hay tests, linter ni CI configurados.
