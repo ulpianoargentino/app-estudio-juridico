@@ -399,3 +399,66 @@ El tipado del frontend está roto para todo lo que no sea auth. Antes de constru
 4. Decidir + implementar `events` + `movements` service → entonces la UI de expedientes empieza a tener sentido.
 5. Elegir editor rich-text + implementar Templates.
 6. Implementar cifrado simétrico, luego IA, luego scraper (en ese orden).
+
+---
+
+## Actualización — 2026-04-17 · Tarea A: `shared/` + Zod como fuente de verdad
+
+**Estado:** recomendación #1 del resumen ejecutivo **resuelta**. Las demás siguen pendientes.
+
+### Qué se hizo
+
+- Nueva carpeta [shared/](shared/) en la raíz del repo con schemas Zod por dominio (`auth`, `user`, `firm`, `person`, `court`, `case`, `matter`, `party`) + utilidades comunes (`paginatedSchema`, `errorResponseSchema`, enums). Sin `package.json` — es una carpeta de código, no un workspace.
+- Alias `@shared` configurado en:
+  - `backend/tsconfig.json` (paths) + runtime con `tsconfig-paths/register` vía `ts-node`
+  - `frontend/tsconfig.json` (paths) + `frontend/vite.config.ts` (alias en formato regex)
+- Backend refactorizado:
+  - Los 6 controllers (`auth`, `person`, `case`, `matter`, `court`, `party`) ahora importan los schemas desde `@shared` y delegan el formato de errores a `backend/src/utils/zod-error.ts`.
+  - Los 6 services reemplazan sus interfaces locales por `type X = z.infer<typeof shared.xCreateSchema>` (aliasadas sobre los tipos inferidos de `@shared`).
+  - `backend/src/middleware/error-handler.ts` ahora tipa la respuesta con el `ErrorResponse` de `@shared`.
+  - **Eliminados:** todo `backend/src/validators/` (5 archivos) y el duplicado `backend/src/types/index.ts`. Queda únicamente `backend/src/types/express.ts` (augmentación de `Request`, no sale por la red).
+- Frontend refactorizado:
+  - `frontend/src/services/auth.service.ts` y `frontend/src/contexts/auth-context.tsx` consumen `AuthUser` y `RegisterRequest` desde `@shared`.
+  - `frontend/src/components/ui/person-select.tsx` usa `PersonSearchResult` de `@shared`.
+  - `frontend/src/types/index.ts` quedó reducido a `export * from "@shared"` para no romper el código existente que importaba desde `@/types`. Futuros módulos deberían importar directamente desde `@shared`.
+  - Instalados `react-hook-form@7.72` y `@hookform/resolvers@5.2`. Todavía sin consumidores — se adoptarán cuando se arranquen los primeros forms reales.
+- CLAUDE.md actualizado con nueva sección "Tipos compartidos", nuevo árbol de carpetas y notas sobre el alias `@shared`.
+
+### Discrepancias detectadas al tipar los schemas (ahora fijadas en `shared/`)
+
+Comparando el schema que el backend realmente devuelve vs. lo que los tipos del frontend declaraban, se confirmaron los drifts que marcaba B3 y se encontraron otros:
+
+| Entidad | Hallazgo al crear el schema |
+|---|---|
+| `Case` | El frontend definía 11 campos sobre los 20 reales del backend. Se reescribió con los 20 (incluye `jurisdiction`, `processType`, `primaryClientId`, `responsibleAttorneyId`, `startDate`, `claimedAmount`, `currency`, `portalUrl`, `notes`, `isActive`). |
+| `Matter` | El frontend tenía un campo ficticio `description` que no existe en la tabla. Eliminado. Se incorporaron `matterType`, `primaryClientId`, `opposingPartyId`, `responsibleAttorneyId`, `startDate`, `estimatedFee`, `currency`, `notes`, `convertedToCaseId`, `isActive`. |
+| `Person` | Faltaban `personType`, `businessName`, `cuitCuil`, `mobilePhone`, dirección completa, `legalAddress`, `appointedAddress`, `notes`, `isActive`. Incorporados. `PersonSearchResult` quedó como schema separado (subset para autocomplete). |
+| `Party` | El frontend no tenía shape alguno. Se creó con `caseId`/`matterId` (XOR), `personId`, `role`, `isPrimary`, auditoría. |
+| `Court` | Se creó desde cero (no había tipo en el frontend). |
+| `Movement` | **No se creó schema** — el backend no expone endpoints de movements todavía. Queda como deuda para cuando se haga el service. |
+| `Event` | **No se creó schema** — ídem. |
+| `Errand`, `Document`, `Template`, `Notification`, `CaseLink`, `PortalCredential` | Sin schema. Son "SOLO SCHEMA de DB" en el módulo status — cuando tengan endpoints, se agregan al contrato. |
+
+### Drift que ya NO existe
+
+La fila 1 de C2 ("Tipos del frontend completamente desalineados con el backend") y la sección B3 se consideran resueltos **para los 6 dominios con backend implementado**. Cualquier drift futuro romperá la compilación de ambos proyectos al mismo tiempo.
+
+### Drift que SIGUE existiendo
+
+- Entidades sin endpoint y por lo tanto sin schema en `shared/`: `Movement`, `Event`, `Errand`, `Document`, `Template`, `Notification`, `CaseLink`, `PortalCredential`. Cada vez que se le agregue un service, hay que crear el schema correspondiente en `shared/schemas/` y actualizar el barrel.
+- `status-badge.tsx` sigue con los enum labels hardcodeados en español (B1). No se tocó en esta tarea.
+
+### Verificaciones corridas
+
+- `tsc --noEmit` backend: limpio.
+- `tsc` build backend (emit completo): limpio — layout de `dist/` quedó `dist/backend/src/` + `dist/shared/` al dejar que TS infiera `rootDir`.
+- `tsc --noEmit` frontend: limpio.
+- `vite build` frontend: limpio (388 KB / 124 KB gz).
+- Smoke test runtime con `ts-node`: import de `@shared` resuelve, schema y enum se cargan.
+- **No verificado end-to-end** (login/register/dashboard contra la API): el entorno no tiene `DATABASE_URL` configurado. Queda a verificar manualmente tras el pull.
+
+### Follow-ups abiertos de esta tarea
+
+1. Decidir cómo empaquetar el backend para producción. Hoy `npm run build` emite a `dist/backend/src/…`, y el JS generado no resuelve `@shared` en runtime (ts-node sí lo hace en dev). Opciones: bundler (tsup/esbuild) con `--bundle` o `tsc-alias` + `module-alias` al arrancar.
+2. Migrar los consumidores restantes del frontend a importar directamente desde `@shared` y, en algún momento, vaciar `frontend/src/types/index.ts`.
+3. Schemas pendientes (`movement`, `event`, `errand`, `document`, `template`, `notification`, `caseLink`, `portalCredential`) se crean junto con el service correspondiente — no antes.

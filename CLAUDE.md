@@ -54,9 +54,79 @@ Hay 3 documentos de especificación en [docs/](docs/) que describen el producto,
 - Claves primarias: UUIDv7 en columnas `text` (ver `backend/src/utils/uuid.ts`)
 - Middleware de seguridad: helmet + cors + cookie-parser
 - Frontend: React 19 + Vite 6 + TypeScript 5.7
-- Manejo de formularios: PENDIENTE (`react-hook-form` no está instalado)
+- Manejo de formularios: `react-hook-form` 7.72 + `@hookform/resolvers` 5.2 instalados. Adopción pendiente (todavía no hay forms reales de dominio)
 - Tema claro/oscuro: implementado vía `theme-context`
 - i18n: archivo único en español en `frontend/src/i18n/es.ts`
+- Contrato de API: schemas Zod en `shared/` como única fuente de verdad (ver sección "Tipos compartidos")
+
+---
+
+## Tipos compartidos (`shared/`)
+
+La carpeta [shared/](shared/) define el contrato entre backend y frontend con **schemas Zod como fuente de verdad**. Los tipos TypeScript se derivan con `z.infer` — no se escriben a mano en ningún lado.
+
+**Regla de oro:** `shared/` solo puede importar de `zod`. Nada de Drizzle, Express, React ni SDKs. Si un archivo de `shared/` necesita otra cosa, está mal ubicado.
+
+### Estructura
+
+```
+shared/
+├── schemas/
+│   ├── common.ts       # paginatedSchema, errorResponseSchema, idParamSchema
+│   ├── enums.ts        # enums del dominio (CaseStatus, PartyRole, JurisdictionType, ...)
+│   ├── firm.ts
+│   ├── user.ts
+│   ├── auth.ts         # loginRequest, registerRequest, authUser
+│   ├── person.ts       # personCreate/Update/Query/Response + PersonSearchResult
+│   ├── court.ts
+│   ├── case.ts
+│   ├── matter.ts
+│   └── party.ts
+├── types/
+│   └── index.ts        # re-export de tipos `z.infer` agrupados
+├── index.ts            # barrel público
+└── README.md
+```
+
+### Alias `@shared`
+
+Ambos proyectos importan desde `@shared`:
+
+```ts
+// backend/src/controllers/case.controller.ts
+import { caseCreateSchema, caseQuerySchema } from "@shared";
+import { formatZodError } from "../utils/zod-error";
+
+// frontend/src/services/auth.service.ts
+import type { AuthUser, RegisterRequest } from "@shared";
+```
+
+El alias se resuelve en:
+- `backend/tsconfig.json` + `tsconfig-paths` (ts-node en dev; `npm run build` emite a `dist/backend/src/` + `dist/shared/`)
+- `frontend/tsconfig.json` + `frontend/vite.config.ts`
+
+### Convenciones
+
+Por cada dominio se exportan (como mínimo):
+- `xCreateSchema` — body del `POST`. Excluye `id`, `firmId`, auditoría.
+- `xUpdateSchema` — body del `PUT`. Típicamente `xCreateSchema.partial()`.
+- `xQuerySchema` — query string del `GET` (filtros, paginación, orden).
+- `xResponseSchema` — shape de respuesta del backend (con todos los campos visibles).
+
+Reglas de tipado:
+- **Fechas**: `z.string().datetime({ offset: true })` (ISO 8601 con TZ). JSON transporta fechas como string.
+- **Decimales Postgres** (`numeric`): `z.string()`. `postgres-js` los devuelve como string; el frontend parsea al presentar.
+- **UUIDs**: `z.string()` genérico (el proyecto usa UUIDv7; varios validadores de Zod son estrictos con v4).
+- **Paginación**: usar `paginatedSchema(itemSchema)` de `common.ts`. Envelope: `{ data, meta: { total, page, limit, totalPages } }`.
+
+### Flujo al agregar un campo
+
+1. Actualizar el schema Drizzle en `backend/src/models/`.
+2. Generar la migración (`npm run db:generate`).
+3. Actualizar el schema Zod correspondiente en `shared/schemas/`.
+4. Backend y frontend recompilan — los lugares que rompen son exactamente los que hay que tocar.
+
+Nunca escribir interfaces de dominio en `backend/src/types/` ni en `frontend/src/types/`: esas carpetas existen para tipos que **no** cruzan la red (augmentación de Express, etc.).
 
 ---
 
@@ -205,28 +275,33 @@ Este es el mapeo autoritativo entre el dominio jurídico argentino (español) y 
 
 ```
 app-juridica/
+├── shared/                  # Contrato de API (schemas Zod → tipos TS). Alias: @shared
+│   ├── schemas/             # Un archivo por dominio: auth, person, court, case, matter, party, ...
+│   ├── types/               # Tipos z.infer agrupados
+│   ├── index.ts             # Barrel público
+│   └── README.md
 ├── frontend/                # React + TypeScript
 │   ├── src/
 │   │   ├── components/      # Componentes UI reutilizables
 │   │   ├── pages/           # Vistas por módulo
-│   │   ├── services/        # Llamadas al API
+│   │   ├── services/        # Llamadas al API (consumen tipos desde @shared)
 │   │   ├── contexts/        # Estado global (auth, tema, etc.)
 │   │   ├── hooks/           # Hooks personalizados de React
 │   │   ├── i18n/            # Archivos de traducción (español)
-│   │   ├── types/           # Definiciones de tipos TypeScript
+│   │   ├── types/           # Re-export de @shared (compat histórica) — no definir tipos de dominio acá
 │   │   └── utils/           # Funciones auxiliares
 ├── backend/                 # Node.js + TypeScript
 │   ├── src/
 │   │   ├── routes/          # Definiciones de endpoints
-│   │   ├── controllers/     # Lógica de manejo de requests
-│   │   ├── models/          # Definiciones de entidades de BD
-│   │   ├── services/        # Lógica de negocio
+│   │   ├── controllers/     # Validan con schemas Zod importados de @shared
+│   │   ├── models/          # Definiciones Drizzle (shape de DB, no del API)
+│   │   ├── services/        # Lógica de negocio (tipos vía z.infer de @shared)
 │   │   ├── ai-service/      # Capa de abstracción del LLM (ver abajo)
 │   │   ├── portal-scraper/  # Servicio de scraping de portales judiciales
 │   │   ├── middleware/      # Auth, validación, manejo de errores
-│   │   ├── types/           # Tipos TypeScript compartidos
-│   │   └── utils/           # Funciones auxiliares
-├── database/                # Migraciones y seeds
+│   │   ├── types/           # Augmentación de Express (express.ts) — NO tipos de dominio
+│   │   └── utils/           # uuid.ts (UUIDv7), zod-error.ts (formato de errores 400)
+├── database/                # Migraciones y seeds (actualmente las migraciones viven en backend/drizzle/)
 ├── CLAUDE.md                # Este archivo
 └── README.md
 ```
@@ -427,7 +502,8 @@ La arquitectura debe permitir agregar nuevas jurisdicciones provinciales sin red
 
 ## Problemas conocidos
 
-- Los tipos en `frontend/src/types/index.ts` están desactualizados respecto al schema real del backend. No usarlos sin regenerarlos primero.
 - Las columnas `username_encrypted` y `password_encrypted` en `portal_credentials` tienen ese nombre pero **no hay código de encriptación implementado**. Encriptar antes de guardar es requisito de seguridad pendiente.
 - Las tablas `notifications`, `case_links` y `portal_credentials` no tienen todos los campos de auditoría que exige este mismo documento. Corregir en la próxima migración.
 - No hay tests, linter ni CI configurados.
+- Los scripts `main` y `start` de `backend/package.json` apuntan a `dist/backend/src/index.js`. El layout anidado viene de que, al eliminar `rootDir` para poder importar `../shared`, TypeScript infiere la raíz común y emite bajo `dist/backend/src/` + `dist/shared/`. Para producción falta decidir si pasar a un bundler (tsup/esbuild) o mantener `tsc` con este layout.
+- Al correr el bundle compilado (`npm start`), el alias `@shared` no está resuelto en el JS emitido. `npm run dev` sí funciona (ts-node + tsconfig-paths). Pendiente: decidir entre bundler con alias o `tsc-alias` para rescribir imports al build.
