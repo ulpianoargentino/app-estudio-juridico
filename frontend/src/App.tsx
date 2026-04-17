@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -8,6 +9,7 @@ import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
 import { DashboardPage } from "@/pages/dashboard";
 import { PlaceholderPage } from "@/pages/placeholder";
+import { PersonsPage } from "@/pages/persons";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +42,7 @@ export function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/cases" element={<PlaceholderPage title="cases" />} />
                 <Route path="/matters" element={<PlaceholderPage title="matters" />} />
-                <Route path="/persons" element={<PlaceholderPage title="people" />} />
+                <Route path="/persons" element={<PersonsPage />} />
                 <Route path="/calendar" element={<PlaceholderPage title="calendar" />} />
                 <Route path="/filings" element={<PlaceholderPage title="filings" />} />
                 <Route path="/reports" element={<PlaceholderPage title="reports" />} />
@@ -51,6 +53,7 @@ export function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </BrowserRouter>
+          <Toaster position="top-right" richColors closeButton />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
