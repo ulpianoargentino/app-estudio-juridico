@@ -466,3 +466,5 @@ La fila 1 de C2 ("Tipos del frontend completamente desalineados con el backend")
 ---
 
 Actualización 2026-04-17 bis: resuelto el problema #3 (campos de auditoría faltantes). `notifications`, `case_links` y `portal_credentials` ahora cumplen la regla de CLAUDE.md. Migración: `backend/drizzle/0001_parched_black_bolt.sql`.
+
+Actualización 2026-04-17 ter: resuelto el problema #5 (Zustand y React Query sin patrón). Decisión: React Query + Context como estándar. Zustand removido. Patrones documentados en CLAUDE.md sección "Patrones de frontend — reglas".

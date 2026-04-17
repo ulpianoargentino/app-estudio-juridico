@@ -32,7 +32,9 @@ Hay 3 documentos de especificación en [docs/](docs/) que describen el producto,
 | ORM | Drizzle ORM (con `drizzle-kit` para migraciones) |
 | Librería UI | shadcn/ui + Tailwind v4 |
 | Cliente HTTP (frontend) | axios 1.14 |
-| Estado cliente (frontend) | PENDIENTE — Zustand, Context y React Query están instalados pero sin patrón consistente |
+| Estado datos servidor | React Query (TanStack Query) v5 |
+| Estado cliente global | React Context (auth, theme) |
+| Formularios | react-hook-form + @hookform/resolvers + schemas de `@shared` |
 | Editor de texto rico | PENDIENTE (ninguno instalado) |
 | Almacenamiento de archivos | Compatible con S3 (S3, MinIO o Cloudflare R2). SDK: PENDIENTE (ningún SDK instalado aún) |
 | IA | API de Anthropic (Claude) vía capa de abstracción |
@@ -58,6 +60,35 @@ Hay 3 documentos de especificación en [docs/](docs/) que describen el producto,
 - Tema claro/oscuro: implementado vía `theme-context`
 - i18n: archivo único en español en `frontend/src/i18n/es.ts`
 - Contrato de API: schemas Zod en `shared/` como única fuente de verdad (ver sección "Tipos compartidos")
+
+---
+
+## Patrones de frontend — reglas
+
+Todas las pantallas de datos siguen los mismos patrones. No inventar variaciones.
+
+### Datos del servidor → React Query
+- Toda lectura (listado, detalle) usa `useQuery` con `queryKey` de forma `['dominio', ...params]`, ejemplo `['persons', firmId, filters]`.
+- Toda mutación (crear, editar, borrar) usa `useMutation` e invalida las queries afectadas con `queryClient.invalidateQueries` en `onSuccess`.
+- Cada dominio tiene su archivo de hooks en `frontend/src/hooks/queries/{domain}.ts` (ej: `usePersons`, `useCreatePerson`). Los componentes no llaman a axios directamente.
+- El cliente axios sigue viviendo en `services/api.ts` y los services por dominio (`services/person.service.ts`) envuelven las llamadas HTTP. Los hooks de React Query llaman a los services.
+
+### Estado cliente global → Context
+- Solo para datos genuinamente globales y pocos: usuario logueado (auth), tema claro/oscuro, idioma.
+- No crear Context para filtros, selecciones temporales ni datos de un formulario.
+
+### Estado de URL → useSearchParams
+- Filtros, búsqueda, paginación, orden en listados viven en la query string (`?status=ACTIVE&page=2`). Se leen y escriben con `useSearchParams` de react-router-dom.
+- Beneficio: URLs compartibles, botón Atrás funcional, bookmarks.
+
+### Formularios → react-hook-form + Zod
+- Validación con `zodResolver` apuntando al schema de `@shared` del dominio (ejemplo `personCreateSchema`).
+- Estado del formulario local al componente del formulario. No global.
+
+### Qué NO usar
+- **Zustand**: removido del proyecto. Si en el futuro aparece un caso real de estado cliente compartido entre pantallas distantes (típicamente un wizard multi-pantalla), se reinstala entonces.
+- **Llamadas directas a axios desde componentes**: siempre pasar por el service del dominio y por un hook de React Query.
+- **useState para datos del servidor**: eso lo maneja React Query.
 
 ---
 
