@@ -1,3 +1,7 @@
+// Cuando se implemente el service de case_links, debe llenar
+// created_by / updated_by en cada escritura. Siempre lo toca un
+// usuario humano (un abogado vincula expedientes relacionados),
+// por eso ambos campos son NOT NULL.
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { firms } from "./firms";
 import { users } from "./users";
@@ -12,4 +16,6 @@ export const caseLinks = pgTable("case_links", {
   notes: text("notes"),
   createdBy: text("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: text("updated_by").notNull().references(() => users.id),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
