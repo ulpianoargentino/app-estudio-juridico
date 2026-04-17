@@ -4,7 +4,11 @@
     "module": "commonjs",
     "lib": ["ES2022"],
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "..",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -14,6 +18,9 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "../shared/**/*"],
+  "exclude": ["node_modules", "dist", "../frontend", "../backend/dist"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }
