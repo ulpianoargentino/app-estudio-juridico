@@ -19,8 +19,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"]
+      "@shared": ["../shared/index.ts"],
+      "@shared/*": ["../shared/*"],
+      "zod": ["./node_modules/zod"],
+      "zod/*": ["./node_modules/zod/*"]
     }
   },
-  "include": ["src", "../shared"]
+  "include": ["src"]
 }
