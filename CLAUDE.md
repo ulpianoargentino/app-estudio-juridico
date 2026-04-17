@@ -102,8 +102,9 @@ import type { AuthUser, RegisterRequest } from "@shared";
 ```
 
 El alias se resuelve en:
-- `backend/tsconfig.json` + `tsconfig-paths` (ts-node en dev; `npm run build` emite a `dist/backend/src/` + `dist/shared/`)
-- `frontend/tsconfig.json` + `frontend/vite.config.ts`
+- **Dev backend** (`npm run dev`): `backend/tsconfig.json` + `tsconfig-paths/register` cargado por `ts-node`.
+- **Build backend** (`npm run build`): `tsc && tsc-alias -p tsconfig.build.json`. `tsconfig.build.json` extiende el tsconfig principal pero deja sólo el alias `@shared` para que `tsc-alias` no toque los imports de `zod/v4` (que viven en `backend/node_modules/zod` y se resuelven por Node). Emite a `dist/backend/src/` + `dist/shared/`.
+- **Frontend** (Vite dev + build): `frontend/tsconfig.json` + alias en `frontend/vite.config.ts`.
 
 ### Convenciones
 
@@ -505,5 +506,4 @@ La arquitectura debe permitir agregar nuevas jurisdicciones provinciales sin red
 - Las columnas `username_encrypted` y `password_encrypted` en `portal_credentials` tienen ese nombre pero **no hay código de encriptación implementado**. Encriptar antes de guardar es requisito de seguridad pendiente.
 - Las tablas `notifications`, `case_links` y `portal_credentials` no tienen todos los campos de auditoría que exige este mismo documento. Corregir en la próxima migración.
 - No hay tests, linter ni CI configurados.
-- Los scripts `main` y `start` de `backend/package.json` apuntan a `dist/backend/src/index.js`. El layout anidado viene de que, al eliminar `rootDir` para poder importar `../shared`, TypeScript infiere la raíz común y emite bajo `dist/backend/src/` + `dist/shared/`. Para producción falta decidir si pasar a un bundler (tsup/esbuild) o mantener `tsc` con este layout.
-- Al correr el bundle compilado (`npm start`), el alias `@shared` no está resuelto en el JS emitido. `npm run dev` sí funciona (ts-node + tsconfig-paths). Pendiente: decidir entre bundler con alias o `tsc-alias` para rescribir imports al build.
+- Los scripts `main` y `start` de `backend/package.json` apuntan a `dist/backend/src/index.js`. El layout anidado viene de que, al eliminar `rootDir` para poder importar `../shared`, TypeScript infiere la raíz común y emite bajo `dist/backend/src/` + `dist/shared/`. Los imports de `@shared` se reescriben en el build con `tsc-alias` (ver sección "Tipos compartidos").
