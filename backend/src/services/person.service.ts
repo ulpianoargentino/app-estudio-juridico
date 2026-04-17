@@ -171,7 +171,8 @@ export async function update(
 }
 
 export async function softDelete(firmId: string, id: string, userId: string) {
-  // Verificar que exista y pertenezca al firm
+  // El borrado es lógico: isActive=false. Las vinculaciones en `parties` quedan
+  // intactas para preservar la trazabilidad histórica de expedientes y casos.
   const [existing] = await db
     .select({ id: persons.id })
     .from(persons)
@@ -180,23 +181,6 @@ export async function softDelete(firmId: string, id: string, userId: string) {
 
   if (!existing) {
     throw new AppError(404, "PERSON_NOT_FOUND", "Persona no encontrada");
-  }
-
-  // Verificar que no tenga partes vinculadas activas
-  const [activeParty] = await db
-    .select({ id: parties.id })
-    .from(parties)
-    .where(
-      and(eq(parties.personId, id), eq(parties.firmId, firmId))
-    )
-    .limit(1);
-
-  if (activeParty) {
-    throw new AppError(
-      409,
-      "PERSON_HAS_LINKS",
-      "No se puede eliminar: la persona tiene vinculaciones activas a expedientes o casos"
-    );
   }
 
   await db

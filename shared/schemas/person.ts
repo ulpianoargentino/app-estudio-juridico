@@ -2,19 +2,17 @@ import { z } from "zod/v4";
 import { idSchema, auditFieldsSchema, paginationQuerySchema, booleanQueryParam } from "./common";
 import { personType, enumValues } from "./enums";
 
-const CUIT_CUIL_REGEX = /^\d{2}-\d{8}-\d$/;
-
 // Campos editables por el usuario. Usamos un objeto base para derivar create,
 // update y response sin duplicar la forma.
+// cuitCuil: string libre. Aceptamos DNI (7-8 dígitos), CUIT (11 con o sin guiones),
+// CUIL, etc. La validación de formato depende del tipo de documento y varía según
+// la jurisdicción — se mantiene como texto sin parsear.
 const personBaseSchema = z.object({
   personType: z.enum(enumValues(personType), { error: "Tipo de persona inválido" }),
   firstName: z.string().default(""),
   lastName: z.string().default(""),
   businessName: z.string().nullish(),
-  cuitCuil: z
-    .string()
-    .regex(CUIT_CUIL_REGEX, "Formato de CUIT/CUIL inválido (XX-XXXXXXXX-X)")
-    .nullish(),
+  cuitCuil: z.string().nullish(),
   email: z.email("Email inválido").nullish(),
   phone: z.string().nullish(),
   mobilePhone: z.string().nullish(),
@@ -65,10 +63,7 @@ export const personUpdateSchema = z.object({
   firstName: z.string().min(1, "El nombre es obligatorio").optional(),
   lastName: z.string().min(1, "El apellido es obligatorio").optional(),
   businessName: z.string().nullish(),
-  cuitCuil: z
-    .string()
-    .regex(CUIT_CUIL_REGEX, "Formato de CUIT/CUIL inválido (XX-XXXXXXXX-X)")
-    .nullish(),
+  cuitCuil: z.string().nullish(),
   email: z.email("Email inválido").nullish(),
   phone: z.string().nullish(),
   mobilePhone: z.string().nullish(),
