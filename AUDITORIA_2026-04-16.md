@@ -468,3 +468,5 @@ La fila 1 de C2 ("Tipos del frontend completamente desalineados con el backend")
 Actualización 2026-04-17 bis: resuelto el problema #3 (campos de auditoría faltantes). `notifications`, `case_links` y `portal_credentials` ahora cumplen la regla de CLAUDE.md. Migración: `backend/drizzle/0001_parched_black_bolt.sql`.
 
 Actualización 2026-04-17 ter: resuelto el problema #5 (Zustand y React Query sin patrón). Decisión: React Query + Context como estándar. Zustand removido. Patrones documentados en CLAUDE.md sección "Patrones de frontend — reglas".
+
+Actualización 2026-04-17 quater: resuelto parcialmente el estado "BACKEND COMPLETO / UI 0%" del módulo Personas (§A4, fila 4). Ahora tiene UI completa: listar + crear + editar + borrar (soft delete). Es la implementación de referencia para los otros 14 módulos. Pendiente tarea C.2 (búsqueda, filtros, paginación). Ajustes colaterales: se removió el regex de `cuitCuil` en `shared/schemas/person.ts` (el campo acepta DNI/CUIT/CUIL sin formato) y se eliminó el check de vinculaciones a `parties` en `person.service.softDelete` — el soft delete es justamente el mecanismo para preservar las vinculaciones históricas.

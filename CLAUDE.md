@@ -90,6 +90,18 @@ Todas las pantallas de datos siguen los mismos patrones. No inventar variaciones
 - **Llamadas directas a axios desde componentes**: siempre pasar por el service del dominio y por un hook de React Query.
 - **useState para datos del servidor**: eso lo maneja React Query.
 
+### Ejemplo de referencia — módulo Personas
+
+El módulo Personas es la implementación de referencia de estos patrones. Los próximos módulos (cases, matters, parties, courts, etc.) deben seguir la misma estructura y nomenclatura:
+
+- [frontend/src/services/person.service.ts](frontend/src/services/person.service.ts) — funciones axios tipadas con `@shared`.
+- [frontend/src/hooks/queries/persons.ts](frontend/src/hooks/queries/persons.ts) — `usePersons`, `useCreatePerson`, `useUpdatePerson`, `useDeletePerson`. Mutations invalidan `['persons']` en onSuccess.
+- [frontend/src/pages/persons/](frontend/src/pages/persons/) — carpeta por dominio con `index.tsx` (página) y subcomponentes colocados:
+  - `persons-table.tsx`, `persons-empty-state.tsx`, `person-form-dialog.tsx`, `delete-person-dialog.tsx`.
+- Formulario: `react-hook-form` + `zodResolver(personCreateSchema)` (`@shared`). Strings vacíos se convierten a `undefined` antes de enviar para no fallar validaciones `.email()` / `.url()`.
+- Toast feedback: `sonner` (importado como `toast.success` / `toast.error`). `<Toaster />` global está montado una sola vez en [frontend/src/App.tsx](frontend/src/App.tsx).
+- Soft delete: el backend cambia `is_active = false`; el `findAll` filtra por `is_active = true` por default. Nunca hay DELETE físico.
+
 ---
 
 ## Tipos compartidos (`shared/`)
