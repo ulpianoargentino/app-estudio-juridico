@@ -462,3 +462,7 @@ La fila 1 de C2 ("Tipos del frontend completamente desalineados con el backend")
 1. ~~Decidir cómo empaquetar el backend para producción.~~ **Resuelto 2026-04-17** con `tsc-alias` sumado al script de build (`tsc && tsc-alias -p tsconfig.build.json`). El `tsconfig.build.json` extiende el tsconfig principal pero deja sólo el alias `@shared`, para que tsc-alias no toque los imports de `zod/v4` (que se resuelven por Node al encontrar `backend/node_modules/zod`). El JS emitido en `dist/` corre con `node` plano — verificado cargando `dist/backend/src/index.js` (falla sólo en `app.listen` por puerto ocupado, no en resolución de módulos).
 2. Migrar los consumidores restantes del frontend a importar directamente desde `@shared` y, en algún momento, vaciar `frontend/src/types/index.ts`.
 3. Schemas pendientes (`movement`, `event`, `errand`, `document`, `template`, `notification`, `caseLink`, `portalCredential`) se crean junto con el service correspondiente — no antes.
+
+---
+
+Actualización 2026-04-17 bis: resuelto el problema #3 (campos de auditoría faltantes). `notifications`, `case_links` y `portal_credentials` ahora cumplen la regla de CLAUDE.md. Migración: `backend/drizzle/0001_parched_black_bolt.sql`.
