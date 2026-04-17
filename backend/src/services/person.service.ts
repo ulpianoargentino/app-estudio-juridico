@@ -15,6 +15,13 @@ const sortColumns = {
   created_at: persons.createdAt,
 } as const;
 
+// Los inputs opcionales llegan como "" cuando el usuario deja el campo vacío
+// (el schema Zod acepta "" para evitar que react-hook-form falle antes del submit).
+// En DB preferimos NULL por consistencia, así que normalizamos acá.
+function toNullable(v: string | null | undefined): string | null {
+  return v === "" || v === null || v === undefined ? null : v;
+}
+
 export async function create(
   firmId: string,
   data: CreatePersonData,
@@ -30,18 +37,18 @@ export async function create(
       personType: data.personType,
       firstName: data.firstName,
       lastName: data.lastName,
-      businessName: data.businessName ?? null,
-      cuitCuil: data.cuitCuil ?? null,
-      email: data.email ?? null,
-      phone: data.phone ?? null,
-      mobilePhone: data.mobilePhone ?? null,
-      addressStreet: data.addressStreet ?? null,
-      addressCity: data.addressCity ?? null,
-      addressState: data.addressState ?? null,
-      addressZip: data.addressZip ?? null,
-      legalAddress: data.legalAddress ?? null,
-      appointedAddress: data.appointedAddress ?? null,
-      notes: data.notes ?? null,
+      businessName: toNullable(data.businessName),
+      cuitCuil: toNullable(data.cuitCuil),
+      email: toNullable(data.email),
+      phone: toNullable(data.phone),
+      mobilePhone: toNullable(data.mobilePhone),
+      addressStreet: toNullable(data.addressStreet),
+      addressCity: toNullable(data.addressCity),
+      addressState: toNullable(data.addressState),
+      addressZip: toNullable(data.addressZip),
+      legalAddress: toNullable(data.legalAddress),
+      appointedAddress: toNullable(data.appointedAddress),
+      notes: toNullable(data.notes),
       createdBy: userId,
       updatedBy: userId,
     })
@@ -157,10 +164,17 @@ export async function update(
     throw new AppError(404, "PERSON_NOT_FOUND", "Persona no encontrada");
   }
 
+  // Normalizamos "" → null para campos opcionales antes de persistir.
+  // firstName/lastName no se afectan: son NOT NULL y el schema Zod rechaza "" con .min(1).
+  const normalized: Record<string, unknown> = { ...data };
+  for (const key of Object.keys(normalized)) {
+    if (normalized[key] === "") normalized[key] = null;
+  }
+
   const [updated] = await db
     .update(persons)
     .set({
-      ...data,
+      ...normalized,
       updatedBy: userId,
       updatedAt: new Date(),
     })

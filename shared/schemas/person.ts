@@ -2,6 +2,15 @@ import { z } from "zod/v4";
 import { idSchema, auditFieldsSchema, paginationQuerySchema, booleanQueryParam } from "./common";
 import { personType, enumValues } from "./enums";
 
+// Email opcional que también acepta "" (string vacío). react-hook-form valida
+// contra el schema antes del submit usando el valor raw del input, que es ""
+// cuando el usuario no llenó el campo — .email().nullish() rechazaría ese ""
+// con "Email inválido" antes de que el service lo convierta a null.
+const optionalEmail = z
+  .string()
+  .refine((v) => v === "" || z.email().safeParse(v).success, "Email inválido")
+  .nullish();
+
 // Campos editables por el usuario. Usamos un objeto base para derivar create,
 // update y response sin duplicar la forma.
 // cuitCuil: string libre. Aceptamos DNI (7-8 dígitos), CUIT (11 con o sin guiones),
@@ -13,7 +22,7 @@ const personBaseSchema = z.object({
   lastName: z.string().default(""),
   businessName: z.string().nullish(),
   cuitCuil: z.string().nullish(),
-  email: z.email("Email inválido").nullish(),
+  email: optionalEmail,
   phone: z.string().nullish(),
   mobilePhone: z.string().nullish(),
   addressStreet: z.string().nullish(),
@@ -64,7 +73,7 @@ export const personUpdateSchema = z.object({
   lastName: z.string().min(1, "El apellido es obligatorio").optional(),
   businessName: z.string().nullish(),
   cuitCuil: z.string().nullish(),
-  email: z.email("Email inválido").nullish(),
+  email: optionalEmail,
   phone: z.string().nullish(),
   mobilePhone: z.string().nullish(),
   addressStreet: z.string().nullish(),
