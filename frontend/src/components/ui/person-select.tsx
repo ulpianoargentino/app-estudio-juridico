@@ -6,15 +6,7 @@ import { es } from "@/i18n/es";
 import { apiClient } from "@/services/api";
 import { cn } from "@/lib/utils";
 import { ChevronsUpDown, Check, X } from "lucide-react";
-
-interface PersonResult {
-  id: string;
-  firstName: string;
-  lastName: string;
-  businessName: string | null;
-  cuitCuil: string | null;
-  personType: string;
-}
+import type { PersonSearchResult as PersonResult } from "@shared";
 
 interface PersonSelectProps {
   value: string | null;

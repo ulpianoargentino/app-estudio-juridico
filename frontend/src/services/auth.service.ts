@@ -1,28 +1,12 @@
 import { apiClient } from "./api";
-
-interface AuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  firm: { id: string; name: string };
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  firmName: string;
-}
+import type { AuthUser, RegisterRequest } from "@shared";
 
 export async function login(email: string, password: string): Promise<AuthUser> {
   const res = await apiClient.post<{ user: AuthUser }>("/auth/login", { email, password });
   return res.data.user;
 }
 
-export async function register(data: RegisterData): Promise<AuthUser> {
+export async function register(data: RegisterRequest): Promise<AuthUser> {
   const res = await apiClient.post<{ user: AuthUser }>("/auth/register", data);
   return res.data.user;
 }

@@ -7,30 +7,14 @@ import {
   type ReactNode,
 } from "react";
 import * as authService from "@/services/auth.service";
-
-interface AuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  firm: { id: string; name: string };
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  firmName: string;
-}
+import type { AuthUser, RegisterRequest } from "@shared";
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -54,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(loggedUser);
   }, []);
 
-  const register = useCallback(async (data: RegisterData) => {
+  const register = useCallback(async (data: RegisterRequest) => {
     const newUser = await authService.register(data);
     setUser(newUser);
   }, []);
