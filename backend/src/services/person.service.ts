@@ -3,36 +3,11 @@ import { db } from "../db";
 import { persons, parties, cases, matters } from "../models";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
+import type { PersonCreateInput, PersonUpdateInput, PersonQuery } from "@shared";
 
-interface CreatePersonData {
-  personType: string;
-  firstName: string;
-  lastName: string;
-  businessName?: string | null;
-  cuitCuil?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  mobilePhone?: string | null;
-  addressStreet?: string | null;
-  addressCity?: string | null;
-  addressState?: string | null;
-  addressZip?: string | null;
-  legalAddress?: string | null;
-  appointedAddress?: string | null;
-  notes?: string | null;
-}
-
-interface UpdatePersonData extends Partial<CreatePersonData> {}
-
-interface FindAllFilters {
-  page: number;
-  limit: number;
-  search?: string;
-  personType?: string;
-  isActive?: boolean;
-  sort: string;
-  order: string;
-}
+type CreatePersonData = PersonCreateInput;
+type UpdatePersonData = PersonUpdateInput;
+type FindAllFilters = PersonQuery;
 
 const sortColumns = {
   last_name: persons.lastName,

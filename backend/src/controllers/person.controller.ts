@@ -1,22 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod/v4";
 import * as personService from "../services/person.service";
 import {
-  createPersonSchema,
-  updatePersonSchema,
-  queryPersonSchema,
-} from "../validators/person.validator";
-
-function formatZodError(error: z.ZodError) {
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details: error.issues.map((issue) => ({
-      field: issue.path.join("."),
-      message: issue.message,
-    })),
-  };
-}
+  personCreateSchema,
+  personUpdateSchema,
+  personQuerySchema,
+} from "@shared";
+import { formatZodError } from "../utils/zod-error";
 
 export async function list(
   req: Request,
@@ -24,7 +13,7 @@ export async function list(
   next: NextFunction
 ): Promise<void> {
   try {
-    const parsed = queryPersonSchema.safeParse(req.query);
+    const parsed = personQuerySchema.safeParse(req.query);
     if (!parsed.success) {
       res.status(400).json({ error: formatZodError(parsed.error) });
       return;
@@ -56,7 +45,7 @@ export async function create(
   next: NextFunction
 ): Promise<void> {
   try {
-    const parsed = createPersonSchema.safeParse(req.body);
+    const parsed = personCreateSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: formatZodError(parsed.error) });
       return;
@@ -79,7 +68,7 @@ export async function update(
   next: NextFunction
 ): Promise<void> {
   try {
-    const parsed = updatePersonSchema.safeParse(req.body);
+    const parsed = personUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: formatZodError(parsed.error) });
       return;

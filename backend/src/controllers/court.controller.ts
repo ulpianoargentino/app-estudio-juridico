@@ -1,19 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod/v4";
 import * as courtService from "../services/court.service";
-import { createCourtSchema, updateCourtSchema, queryCourtSchema } from "../validators/court.validator";
-
-function formatZodError(error: z.ZodError) {
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details: error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
-  };
-}
+import { courtCreateSchema, courtUpdateSchema, courtQuerySchema } from "@shared";
+import { formatZodError } from "../utils/zod-error";
 
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = queryCourtSchema.safeParse(req.query);
+    const parsed = courtQuerySchema.safeParse(req.query);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const result = await courtService.findAll(req.firmId!, parsed.data);
     res.json({ data: result.data, meta: result.meta });
@@ -29,7 +21,7 @@ export async function getById(req: Request, res: Response, next: NextFunction): 
 
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = createCourtSchema.safeParse(req.body);
+    const parsed = courtCreateSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const court = await courtService.create(req.firmId!, parsed.data, req.user!.userId);
     res.status(201).json({ data: court });
@@ -38,7 +30,7 @@ export async function create(req: Request, res: Response, next: NextFunction): P
 
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = updateCourtSchema.safeParse(req.body);
+    const parsed = courtUpdateSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const court = await courtService.update(req.firmId!, req.params.id as string, parsed.data, req.user!.userId);
     res.json({ data: court });

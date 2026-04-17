@@ -3,24 +3,11 @@ import { db } from "../db";
 import { courts } from "../models";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
+import type { CourtCreateInput, CourtUpdateInput, CourtQuery } from "@shared";
 
-interface CreateCourtData {
-  name: string;
-  courtType: string;
-  jurisdiction: string;
-  address?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  notes?: string | null;
-}
-
-interface FindAllFilters {
-  page: number;
-  limit: number;
-  search?: string;
-  sort: string;
-  order: string;
-}
+type CreateCourtData = CourtCreateInput;
+type UpdateCourtData = CourtUpdateInput;
+type FindAllFilters = CourtQuery;
 
 const sortColumns = {
   name: courts.name,
@@ -86,7 +73,7 @@ export async function findById(firmId: string, id: string) {
   return court;
 }
 
-export async function update(firmId: string, id: string, data: Partial<CreateCourtData>, userId: string) {
+export async function update(firmId: string, id: string, data: UpdateCourtData, userId: string) {
   const [existing] = await db
     .select({ id: courts.id })
     .from(courts)

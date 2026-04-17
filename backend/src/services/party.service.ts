@@ -3,12 +3,9 @@ import { db } from "../db";
 import { parties, persons, cases, matters } from "../models";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
+import type { PartyCreateInput } from "@shared";
 
-interface AddPartyData {
-  personId: string;
-  role: string;
-  notes?: string | null;
-}
+type AddPartyData = PartyCreateInput;
 
 export async function addParty(
   firmId: string,

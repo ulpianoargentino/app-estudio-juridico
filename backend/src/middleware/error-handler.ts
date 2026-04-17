@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ApiErrorResponse } from "../types";
+import type { ErrorResponse } from "@shared";
 
 export class AppError extends Error {
   constructor(
@@ -19,7 +19,7 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   if (err instanceof AppError) {
-    const body: ApiErrorResponse = {
+    const body: ErrorResponse = {
       error: {
         code: err.code,
         message: err.message,
@@ -29,9 +29,8 @@ export function errorHandler(
     return;
   }
 
-  // Unexpected errors
   console.error("Unhandled error:", err);
-  const body: ApiErrorResponse = {
+  const body: ErrorResponse = {
     error: {
       code: "INTERNAL_SERVER_ERROR",
       message: "An unexpected error occurred",

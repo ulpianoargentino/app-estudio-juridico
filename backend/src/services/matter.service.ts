@@ -4,42 +4,17 @@ import { matters, persons, users, cases, parties, movements, documents, events }
 import { matterStatus } from "../models/enums";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
+import type {
+  MatterCreateInput,
+  MatterUpdateInput,
+  MatterQuery,
+  MatterConvertToCaseInput,
+} from "@shared";
 
-interface CreateMatterData {
-  title: string;
-  matterType: string;
-  status: string;
-  primaryClientId?: string | null;
-  opposingPartyId?: string | null;
-  responsibleAttorneyId?: string | null;
-  startDate?: Date | null;
-  estimatedFee?: string | null;
-  currency?: string | null;
-  notes?: string | null;
-}
-
-interface FindAllFilters {
-  page: number;
-  limit: number;
-  search?: string;
-  status?: string;
-  matterType?: string;
-  responsibleAttorneyId?: string;
-  primaryClientId?: string;
-  isActive?: boolean;
-  sort: string;
-  order: string;
-}
-
-interface ConvertToCaseData {
-  caseTitle: string;
-  caseNumber?: string | null;
-  jurisdictionType: string;
-  jurisdiction?: string | null;
-  courtId?: string | null;
-  processType?: string | null;
-  status: string;
-}
+type CreateMatterData = MatterCreateInput;
+type UpdateMatterData = MatterUpdateInput;
+type FindAllFilters = MatterQuery;
+type ConvertToCaseData = MatterConvertToCaseInput;
 
 const sortColumns = {
   updated_at: matters.updatedAt,
@@ -187,7 +162,7 @@ export async function findById(firmId: string, id: string) {
   };
 }
 
-export async function update(firmId: string, id: string, data: Partial<CreateMatterData>, userId: string) {
+export async function update(firmId: string, id: string, data: UpdateMatterData, userId: string) {
   const [existing] = await db.select({ id: matters.id }).from(matters)
     .where(and(eq(matters.id, id), eq(matters.firmId, firmId))).limit(1);
   if (!existing) throw new AppError(404, "MATTER_NOT_FOUND", "Caso no encontrado");

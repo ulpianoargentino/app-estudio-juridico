@@ -8,26 +8,13 @@ import { userRole, type UserRole } from "../models/enums";
 import { config } from "../config";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
+import type { RegisterRequest, AuthUser } from "@shared";
 
 const BCRYPT_ROUNDS = 12;
 const JWT_EXPIRES_IN = "7d";
 
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  firmName: string;
-}
-
-interface UserResponse {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  firm: { id: string; name: string };
-}
+type RegisterData = RegisterRequest;
+type UserResponse = AuthUser;
 
 function generateToken(userId: string, firmId: string, role: UserRole): string {
   return jwt.sign({ userId, firmId, role }, config.jwt.secret, {

@@ -1,19 +1,16 @@
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod/v4";
 import * as matterService from "../services/matter.service";
-import { createMatterSchema, updateMatterSchema, queryMatterSchema, convertToCaseSchema } from "../validators/matter.validator";
-
-function formatZodError(error: z.ZodError) {
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details: error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
-  };
-}
+import {
+  matterCreateSchema,
+  matterUpdateSchema,
+  matterQuerySchema,
+  matterConvertToCaseSchema,
+} from "@shared";
+import { formatZodError } from "../utils/zod-error";
 
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = queryMatterSchema.safeParse(req.query);
+    const parsed = matterQuerySchema.safeParse(req.query);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const result = await matterService.findAll(req.firmId!, parsed.data);
     res.json({ data: result.data, meta: result.meta });
@@ -29,7 +26,7 @@ export async function getById(req: Request, res: Response, next: NextFunction): 
 
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = createMatterSchema.safeParse(req.body);
+    const parsed = matterCreateSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const matter = await matterService.create(req.firmId!, parsed.data, req.user!.userId);
     res.status(201).json({ data: matter });
@@ -38,7 +35,7 @@ export async function create(req: Request, res: Response, next: NextFunction): P
 
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = updateMatterSchema.safeParse(req.body);
+    const parsed = matterUpdateSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const matter = await matterService.update(req.firmId!, req.params.id as string, parsed.data, req.user!.userId);
     res.json({ data: matter });
@@ -54,7 +51,7 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
 
 export async function convert(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = convertToCaseSchema.safeParse(req.body);
+    const parsed = matterConvertToCaseSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const newCase = await matterService.convertToCase(req.firmId!, req.params.id as string, parsed.data, req.user!.userId);
     res.status(201).json({ data: newCase });

@@ -3,36 +3,11 @@ import { db } from "../db";
 import { cases, persons, users, courts, parties, movements, documents, events } from "../models";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
+import type { CaseCreateInput, CaseUpdateInput, CaseQuery } from "@shared";
 
-interface CreateCaseData {
-  caseNumber?: string | null;
-  caseTitle: string;
-  jurisdictionType: string;
-  jurisdiction?: string | null;
-  courtId?: string | null;
-  processType?: string | null;
-  status: string;
-  primaryClientId?: string | null;
-  responsibleAttorneyId?: string | null;
-  startDate?: Date | null;
-  claimedAmount?: string | null;
-  currency?: string | null;
-  portalUrl?: string | null;
-  notes?: string | null;
-}
-
-interface FindAllFilters {
-  page: number;
-  limit: number;
-  search?: string;
-  status?: string;
-  jurisdictionType?: string;
-  responsibleAttorneyId?: string;
-  primaryClientId?: string;
-  isActive?: boolean;
-  sort: string;
-  order: string;
-}
+type CreateCaseData = CaseCreateInput;
+type UpdateCaseData = CaseUpdateInput;
+type FindAllFilters = CaseQuery;
 
 const sortColumns = {
   updated_at: cases.updatedAt,
@@ -274,7 +249,7 @@ export async function findById(firmId: string, id: string) {
   };
 }
 
-export async function update(firmId: string, id: string, data: Partial<CreateCaseData>, userId: string) {
+export async function update(firmId: string, id: string, data: UpdateCaseData, userId: string) {
   const [existing] = await db
     .select({ id: cases.id })
     .from(cases)

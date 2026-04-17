@@ -1,20 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod/v4";
 import * as partyService from "../services/party.service";
-import { addPartySchema } from "../validators/party.validator";
-
-function formatZodError(error: z.ZodError) {
-  return {
-    code: "VALIDATION_ERROR",
-    message: "Datos de entrada inválidos",
-    details: error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
-  };
-}
+import { partyCreateSchema } from "@shared";
+import { formatZodError } from "../utils/zod-error";
 
 // Cases
 export async function addPartyToCase(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = addPartySchema.safeParse(req.body);
+    const parsed = partyCreateSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const party = await partyService.addParty(req.firmId!, {
       ...parsed.data, caseId: req.params.caseId as string,
@@ -40,7 +32,7 @@ export async function listPartiesOfCase(req: Request, res: Response, next: NextF
 // Matters
 export async function addPartyToMatter(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const parsed = addPartySchema.safeParse(req.body);
+    const parsed = partyCreateSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
     const party = await partyService.addParty(req.firmId!, {
       ...parsed.data, matterId: req.params.matterId as string,
