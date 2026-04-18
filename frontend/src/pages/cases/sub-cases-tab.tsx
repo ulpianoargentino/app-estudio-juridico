@@ -102,6 +102,9 @@ export function SubCasesTab({ parent }: SubCasesTabProps) {
                   {es.cases.subCases.table.type}
                 </th>
                 <th className="px-4 py-2 text-left">
+                  {es.cases.subCases.table.caseTitle}
+                </th>
+                <th className="px-4 py-2 text-left">
                   {es.cases.subCases.table.description}
                 </th>
                 <th className="px-4 py-2 text-left">
@@ -133,6 +136,9 @@ export function SubCasesTab({ parent }: SubCasesTabProps) {
                     ) : (
                       "—"
                     )}
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className="line-clamp-1">{sub.caseTitle}</span>
                   </td>
                   <td className="px-4 py-2">
                     {sub.subCaseDescription ?? "—"}

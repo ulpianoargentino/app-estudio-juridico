@@ -125,7 +125,28 @@ export function CaseDetailPage() {
     es.cases.jurisdictionType[data.jurisdictionType as JurisdictionTypeKey] ??
     data.jurisdictionType;
 
-  const isSubCase = data.subCaseType !== null;
+  const isSubCase = data.subCaseType !== null || data.parent !== null;
+
+  // Header del case:
+  // - Padre/normal: title = carátula, description = caseNumber.
+  // - Sub con subCaseNumber + padre con caseNumber: title = "{padre}-{sub}",
+  //   description = carátula propia (que puede haberse editado al crearlo).
+  // - Sub sin subCaseNumber: title = carátula propia, sin description.
+  let headerTitle: string;
+  let headerDescription: string | undefined;
+  if (isSubCase) {
+    const parentNum = data.parent?.caseNumber ?? null;
+    if (data.subCaseNumber && parentNum) {
+      headerTitle = `${parentNum}-${data.subCaseNumber}`;
+      headerDescription = data.caseTitle;
+    } else {
+      headerTitle = data.caseTitle;
+      headerDescription = undefined;
+    }
+  } else {
+    headerTitle = data.caseTitle;
+    headerDescription = data.caseNumber ?? undefined;
+  }
 
   return (
     <div className="space-y-6">
@@ -157,8 +178,8 @@ export function CaseDetailPage() {
           </div>
         )}
         <PageHeader
-          title={data.caseTitle}
-          description={data.caseNumber ?? undefined}
+          title={headerTitle}
+          description={headerDescription}
           action={
             <div className="flex items-center gap-2">
               {isArchived && (
