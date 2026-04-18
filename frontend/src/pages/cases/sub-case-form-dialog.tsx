@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { es } from "@/i18n/es";
 import { ApiError } from "@/services/api";
-import { useCreateSubCase } from "@/hooks/queries/cases";
+import {
+  useCreateSubCase,
+  useNextSubCaseNumber,
+} from "@/hooks/queries/cases";
 import {
   subCaseType as subCaseTypeEnum,
   type CaseDetail,
@@ -21,16 +24,15 @@ import {
 } from "@shared";
 import { toast } from "sonner";
 
+// Modelo flexible: tipo y número son opcionales. La carátula del sub default
+// a la del padre pero se puede editar — útil para incidentes ("Incidente de
+// embargo preventivo s/ caso principal", etc.).
 type FormValues = {
   subCaseType: "" | "EVIDENCE" | "INCIDENT" | "OTHER";
+  subCaseNumber: string;
+  caseTitle: string;
   subCaseDescription: string;
   notes: string;
-};
-
-const emptyValues: FormValues = {
-  subCaseType: "",
-  subCaseDescription: "",
-  notes: "",
 };
 
 interface SubCaseFormDialogProps {
@@ -46,26 +48,43 @@ export function SubCaseFormDialog({
 }: SubCaseFormDialogProps) {
   const createMutation = useCreateSubCase(parent.id);
 
-  // Validación a mano: el único campo obligatorio es subCaseType (un select).
-  // Usar zodResolver acá fuerza al tipo del form a no admitir "" como placeholder
-  // del select, lo que vuelve incómodo el defaultValue. Con un solo campo
-  // requerido alcanza con una validación inline en onSubmit.
+  const initialValues: FormValues = {
+    subCaseType: "",
+    subCaseNumber: "",
+    caseTitle: parent.caseTitle, // default: heredada del padre, editable
+    subCaseDescription: "",
+    notes: "",
+  };
+
   const {
     control,
     handleSubmit,
     reset,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: emptyValues,
+    defaultValues: initialValues,
   });
 
+  // Reseteo cuando se reabre el diálogo, asegurando que la carátula vuelva
+  // al default del padre (que puede haber cambiado entre aperturas).
   useEffect(() => {
-    if (open) reset(emptyValues);
-  }, [open, reset]);
+    if (open) reset(initialValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, parent.caseTitle, reset]);
 
-  // Datos heredados que mostramos como readonly al usuario, para que entienda
-  // qué se va a copiar del padre al hijo (juzgado, cliente, carátula, número).
+  // Observa el tipo seleccionado para pedirle al backend la sugerencia del
+  // próximo número. Sólo dispara cuando hay tipo (el hook tiene `enabled`).
+  const watchedType = useWatch({ control, name: "subCaseType" });
+  const { data: suggestion } = useNextSubCaseNumber(
+    parent.id,
+    watchedType || undefined
+  );
+  const numberPlaceholder = watchedType && suggestion
+    ? suggestion.suggested
+    : es.cases.subCases.form.numberHelpNoType;
+
+  // Datos heredados que mostramos como readonly (juzgado, cliente, número del
+  // padre). La carátula NO va acá porque ahora es un campo editable arriba.
   const inheritedClient = parent.primaryClient
     ? parent.primaryClient.businessName ??
       `${parent.primaryClient.lastName}, ${parent.primaryClient.firstName}`
@@ -73,16 +92,14 @@ export function SubCaseFormDialog({
   const inheritedCourt = parent.court?.name ?? "—";
 
   async function onSubmit(values: FormValues) {
-    if (!values.subCaseType) {
-      setError("subCaseType", {
-        message: es.cases.subCases.validation.typeRequired,
-      });
-      return;
-    }
+    // Modelo flexible: todos los campos son opcionales. Strings vacíos van a
+    // null para que el backend no guarde "".
     const payload: SubCaseCreateInput = {
-      subCaseType: values.subCaseType,
-      subCaseDescription: values.subCaseDescription.trim() || undefined,
-      notes: values.notes.trim() || undefined,
+      subCaseType: values.subCaseType || null,
+      subCaseNumber: values.subCaseNumber.trim() || null,
+      caseTitle: values.caseTitle.trim() || null,
+      subCaseDescription: values.subCaseDescription.trim() || null,
+      notes: values.notes.trim() || null,
     };
     try {
       await createMutation.mutateAsync(payload);
@@ -105,7 +122,6 @@ export function SubCaseFormDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             label={es.cases.subCases.form.type}
-            required
             error={errors.subCaseType?.message}
           >
             <Controller
@@ -116,7 +132,7 @@ export function SubCaseFormDialog({
                   {...field}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="">—</option>
+                  <option value="">{es.cases.subCases.form.typeNone}</option>
                   <option value={subCaseTypeEnum.EVIDENCE}>
                     {es.cases.subCases.type.EVIDENCE}
                   </option>
@@ -131,6 +147,33 @@ export function SubCaseFormDialog({
             />
             <p className="text-xs text-muted-foreground">
               {es.cases.subCases.form.typeHelp}
+            </p>
+          </FormField>
+
+          <FormField
+            label={es.cases.subCases.form.number}
+            error={errors.subCaseNumber?.message}
+          >
+            <Controller
+              name="subCaseNumber"
+              control={control}
+              render={({ field }) => (
+                <Input {...field} placeholder={numberPlaceholder} />
+              )}
+            />
+          </FormField>
+
+          <FormField
+            label={es.cases.subCases.form.caseTitle}
+            error={errors.caseTitle?.message}
+          >
+            <Controller
+              name="caseTitle"
+              control={control}
+              render={({ field }) => <Input {...field} />}
+            />
+            <p className="text-xs text-muted-foreground">
+              {es.cases.subCases.form.caseTitleHelp}
             </p>
           </FormField>
 
@@ -171,12 +214,6 @@ export function SubCaseFormDialog({
                   {es.cases.subCases.form.inheritedCaseNumber}:
                 </dt>
                 <dd>{parent.caseNumber ?? "—"}</dd>
-              </div>
-              <div className="flex gap-2">
-                <dt className="font-medium">
-                  {es.cases.subCases.form.inheritedCaseTitle}:
-                </dt>
-                <dd className="line-clamp-2">{parent.caseTitle}</dd>
               </div>
               <div className="flex gap-2">
                 <dt className="font-medium">
