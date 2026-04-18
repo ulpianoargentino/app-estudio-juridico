@@ -39,8 +39,22 @@ export async function update(req: Request, res: Response, next: NextFunction): P
 
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await caseService.softDelete(req.firmId!, req.params.id as string, req.user!.userId);
-    res.json({ data: { message: "Expediente eliminado" } });
+    await caseService.archive(req.firmId!, req.params.id as string, req.user!.userId);
+    res.json({ data: { message: "Expediente archivado" } });
+  } catch (err) { next(err); }
+}
+
+export async function archive(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await caseService.archive(req.firmId!, req.params.id as string, req.user!.userId);
+    res.json({ data: { message: "Expediente archivado" } });
+  } catch (err) { next(err); }
+}
+
+export async function unarchive(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await caseService.unarchive(req.firmId!, req.params.id as string, req.user!.userId);
+    res.json({ data: { message: "Expediente desarchivado" } });
   } catch (err) { next(err); }
 }
 

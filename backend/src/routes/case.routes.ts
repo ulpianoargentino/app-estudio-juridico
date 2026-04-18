@@ -13,6 +13,10 @@ router.post("/", caseController.create);
 router.put("/:id", caseController.update);
 router.delete("/:id", caseController.remove);
 
+// Archive / unarchive
+router.post("/:id/archive", caseController.archive);
+router.post("/:id/unarchive", caseController.unarchive);
+
 // Party sub-routes for cases
 router.get("/:caseId/parties", partyController.listPartiesOfCase);
 router.post("/:caseId/parties", partyController.addPartyToCase);

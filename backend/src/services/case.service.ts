@@ -273,7 +273,7 @@ export async function update(firmId: string, id: string, data: UpdateCaseData, u
   return updated!;
 }
 
-export async function softDelete(firmId: string, id: string, userId: string) {
+async function setActive(firmId: string, id: string, userId: string, isActive: boolean) {
   const [existing] = await db
     .select({ id: cases.id })
     .from(cases)
@@ -283,8 +283,16 @@ export async function softDelete(firmId: string, id: string, userId: string) {
 
   await db
     .update(cases)
-    .set({ isActive: false, updatedBy: userId, updatedAt: new Date() })
+    .set({ isActive, updatedBy: userId, updatedAt: new Date() })
     .where(and(eq(cases.id, id), eq(cases.firmId, firmId)));
+}
+
+export async function archive(firmId: string, id: string, userId: string) {
+  await setActive(firmId, id, userId, false);
+}
+
+export async function unarchive(firmId: string, id: string, userId: string) {
+  await setActive(firmId, id, userId, true);
 }
 
 export async function getCaseSummary(firmId: string) {
