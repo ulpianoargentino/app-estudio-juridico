@@ -15,7 +15,6 @@ export type PersonType = (typeof personType)[keyof typeof personType];
 
 export const caseStatus = {
   INITIAL: "INITIAL",
-  IN_PROGRESS: "IN_PROGRESS",
   IN_MEDIATION: "IN_MEDIATION",
   EVIDENCE_STAGE: "EVIDENCE_STAGE",
   CLOSING_ARGUMENTS: "CLOSING_ARGUMENTS",
@@ -27,7 +26,6 @@ export const caseStatus = {
   IN_EXECUTION: "IN_EXECUTION",
   INCIDENT: "INCIDENT",
   SUSPENDED: "SUSPENDED",
-  EXPIRED: "EXPIRED",
   CLOSED: "CLOSED",
 } as const;
 export type CaseStatus = (typeof caseStatus)[keyof typeof caseStatus];

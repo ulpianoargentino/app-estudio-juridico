@@ -6,9 +6,8 @@ type BadgeVariant = "success" | "warning" | "danger" | "neutral" | "info" | "def
 // Los labels visibles se resuelven desde i18n en cada caller (pasar `label`),
 // pero mantenemos un fallback hardcoded para status usados sin traducción.
 const statusVariantMap: Record<string, BadgeVariant> = {
-  // Case statuses (15 valores unificados, sin procedural_stages aparte)
+  // Case statuses (13 valores unificados, sin procedural_stages aparte)
   INITIAL: "info",
-  IN_PROGRESS: "info",
   IN_MEDIATION: "info",
   EVIDENCE_STAGE: "warning",
   CLOSING_ARGUMENTS: "warning",
@@ -20,7 +19,6 @@ const statusVariantMap: Record<string, BadgeVariant> = {
   IN_EXECUTION: "info",
   INCIDENT: "warning",
   SUSPENDED: "neutral",
-  EXPIRED: "neutral",
   CLOSED: "neutral",
   // Matter statuses
   ACTIVE: "info",
@@ -37,19 +35,17 @@ const statusVariantMap: Record<string, BadgeVariant> = {
 // deberían pasar siempre la traducción explícita (es.cases.status.*, etc.).
 const statusLabelMap: Record<string, string> = {
   INITIAL: "Inicio",
-  IN_PROGRESS: "En trámite",
   IN_MEDIATION: "Mediación",
-  EVIDENCE_STAGE: "En prueba",
+  EVIDENCE_STAGE: "Abierto a prueba",
   CLOSING_ARGUMENTS: "Alegatos",
   AWAITING_INTERLOCUTORY: "Para interlocutoria",
-  AWAITING_JUDGMENT: "Para sentencia",
-  JUDGMENT_ISSUED: "Sentencia",
-  ON_APPEAL: "En apelación",
+  AWAITING_JUDGMENT: "Para sentencia definitiva",
+  JUDGMENT_ISSUED: "Sentencia dictada",
+  ON_APPEAL: "Apelación",
   FINAL_JUDGMENT: "Sentencia firme",
   IN_EXECUTION: "En ejecución",
   INCIDENT: "Incidente",
   SUSPENDED: "Paralizado",
-  EXPIRED: "Caducado",
   CLOSED: "Terminado",
   ACTIVE: "Activo",
   ON_HOLD: "En espera",

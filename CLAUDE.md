@@ -291,13 +291,12 @@ Este es el mapeo autoritativo entre el dominio jurídico argentino (español) y 
 
 ### Estados de expediente
 
-15 valores unificados (no hay una tabla `procedural_stages` aparte). "Archivado" NO es un status: se representa con `is_active = false` y endpoints `archive` / `unarchive`.
+13 valores unificados (no hay una tabla `procedural_stages` aparte). "Archivado" NO es un status: se representa con `is_active = false` y endpoints `archive` / `unarchive`.
 
 | Español | Inglés (enum en código) |
 |---|---|
 | Inicio | INITIAL |
-| En trámite | IN_PROGRESS |
-| En mediación | IN_MEDIATION |
+| Mediación | IN_MEDIATION |
 | En prueba | EVIDENCE_STAGE |
 | Alegatos | CLOSING_ARGUMENTS |
 | Para interlocutoria | AWAITING_INTERLOCUTORY |
@@ -308,7 +307,6 @@ Este es el mapeo autoritativo entre el dominio jurídico argentino (español) y 
 | En ejecución | IN_EXECUTION |
 | Incidente | INCIDENT |
 | Paralizado | SUSPENDED |
-| Caducado | EXPIRED |
 | Terminado | CLOSED |
 
 ### Estados de otro caso (Matter)
@@ -380,10 +378,10 @@ Toda tabla de la base de datos que almacena datos de usuario DEBE tener una colu
 
 ```typescript
 // CORRECTO
-const cases = await db.cases.findMany({ where: { firmId: user.firmId, status: 'IN_PROGRESS' } });
+const cases = await db.cases.findMany({ where: { firmId: user.firmId, status: 'INITIAL' } });
 
 // MAL — nunca hacer esto
-const cases = await db.cases.findMany({ where: { status: 'IN_PROGRESS' } });
+const cases = await db.cases.findMany({ where: { status: 'INITIAL' } });
 ```
 
 ### Capa de abstracción de IA
@@ -444,7 +442,7 @@ Toda tabla incluye estas columnas desde el día uno:
 - Nombres de columnas: inglés, snake_case (`case_title`, `court_id`, `firm_id`)
 - Claves primarias: columna `id` de tipo `text` con UUIDv7 generado por `backend/src/utils/uuid.ts`
 - Claves foráneas: `{tabla_referenciada_singular}_id` (ej: `case_id`, `person_id`, `firm_id`)
-- Enums: UPPER_SNAKE_CASE (`IN_PROGRESS`, `PLAINTIFF`, `CIVIL_COMMERCIAL`)
+- Enums: UPPER_SNAKE_CASE (`EVIDENCE_STAGE`, `PLAINTIFF`, `CIVIL_COMMERCIAL`)
 - Booleanos: prefijo `is_` o `has_` (`is_active`, `has_digital_signature`)
 - Timestamps: sufijo `_at` (`created_at`, `filed_at`, `due_at`)
 - Todas las fechas se almacenan en UTC, se convierten a zona horaria Argentina (America/Argentina/Buenos_Aires) en el frontend
@@ -458,7 +456,7 @@ Toda tabla incluye estas columnas desde el día uno:
 - Formato de respuesta con error: `{ error: { code: string, message: string } }`
 - Códigos HTTP: 200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 500 (Internal Server Error)
 - Paginación: `?page=1&limit=20` → la respuesta incluye `{ data: T[], meta: { total, page, limit, totalPages } }`
-- Filtros: query params (`?status=IN_PROGRESS&jurisdictionType=CIVIL_COMMERCIAL`)
+- Filtros: query params (`?status=INITIAL&jurisdictionType=CIVIL_COMMERCIAL`)
 - Ordenamiento: `?sort=created_at&order=desc`
 
 ---
@@ -483,7 +481,7 @@ Toda tabla incluye estas columnas desde el día uno:
 | Módulo | Estado | Notas |
 |---|---|---|
 | Autenticación + Firms + Users | **COMPLETO** | Backend + UI (login/register/protected-route). JWT cookies httpOnly, 7 días |
-| Expedientes (Cases) | **COMPLETO** | Backend con CRUD + archive/unarchive + summary. UI en `/cases`: listado con tabs `En Trámite` / `Archivados`, detalle `/cases/:id` con sub-tabs (Detalle/Movimientos/Partes/Documentos/Eventos), form page `/cases/new` y `/cases/:id/edit`. `caseStatus` unificado a 15 valores |
+| Expedientes (Cases) | **COMPLETO** | Backend con CRUD + archive/unarchive + summary. UI en `/cases`: listado con tabs `En Trámite` / `Archivados`, detalle `/cases/:id` con sub-tabs (Detalle/Movimientos/Partes/Documentos/Eventos), form page `/cases/new` y `/cases/:id/edit`. `caseStatus` unificado a 13 valores |
 | Otros Casos (Matters) | **BACKEND COMPLETO** | Incluye endpoint `/convert` (crea Case y copia parties, movements, documents, events transaccional). UI placeholder |
 | Directorio de Personas | **BACKEND COMPLETO** | CRUD + `/search`. UI placeholder. `PersonSelect` ya disponible para forms |
 | Partes (Parties) | **BACKEND COMPLETO** | Sub-rutas `/:caseId/parties` y `/:matterId/parties`. Valida duplicados y pertenencia al firm. Sin UI |

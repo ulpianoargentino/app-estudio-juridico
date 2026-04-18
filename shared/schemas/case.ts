@@ -14,7 +14,23 @@ import {
   enumValues,
 } from "./enums";
 
-const CURRENCY = z.enum(["ARS", "USD"], { error: "Moneda inválida (ARS o USD)" });
+// Moneda opcional que también acepta "" (string vacío). react-hook-form valida
+// contra el schema antes del submit usando el valor raw del input, que es ""
+// cuando el usuario no seleccionó ARS/USD — z.enum().nullish() rechazaría ese "".
+const optionalCurrency = z
+  .string()
+  .refine(
+    (v) => v === "" || v === "ARS" || v === "USD",
+    "Moneda inválida (ARS o USD)"
+  )
+  .nullish();
+
+// URL opcional que también acepta "" (string vacío). Mismo motivo que arriba:
+// z.url().nullish() rechazaría "" antes de que el form lo convierta a undefined.
+const optionalPortalUrl = z
+  .string()
+  .refine((v) => v === "" || z.url().safeParse(v).success, "URL inválida")
+  .nullish();
 
 // CLAIMED_AMOUNT se guarda como numeric en Postgres y el driver lo devuelve como
 // string. En el create lo validamos como string numérico.
@@ -36,8 +52,8 @@ export const caseCreateSchema = z.object({
   responsibleAttorneyId: idSchema.nullish(),
   startDate: z.coerce.date().nullish(),
   claimedAmount: claimedAmountInput,
-  currency: CURRENCY.nullish(),
-  portalUrl: z.url("URL inválida").nullish(),
+  currency: optionalCurrency,
+  portalUrl: optionalPortalUrl,
   notes: z.string().nullish(),
 });
 export type CaseCreateInput = z.infer<typeof caseCreateSchema>;
@@ -57,8 +73,8 @@ export const caseUpdateSchema = z.object({
   responsibleAttorneyId: idSchema.nullish(),
   startDate: z.coerce.date().nullish(),
   claimedAmount: claimedAmountInput,
-  currency: CURRENCY.nullish(),
-  portalUrl: z.url("URL inválida").nullish(),
+  currency: optionalCurrency,
+  portalUrl: optionalPortalUrl,
   notes: z.string().nullish(),
 });
 export type CaseUpdateInput = z.infer<typeof caseUpdateSchema>;
