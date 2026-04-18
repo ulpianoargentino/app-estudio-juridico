@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Archive, ArchiveRestore, Loader2, Pencil } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Archive, ArchiveRestore, Loader2, Pencil, Network } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { ApiError } from "@/services/api";
 import { es } from "@/i18n/es";
 import { toast } from "sonner";
 import type { CaseDetail } from "@shared";
+import { SubCasesTab } from "./sub-cases-tab";
 
 type CaseStatusKey = keyof typeof es.cases.status;
 type JurisdictionTypeKey = keyof typeof es.cases.jurisdictionType;
@@ -124,6 +125,8 @@ export function CaseDetailPage() {
     es.cases.jurisdictionType[data.jurisdictionType as JurisdictionTypeKey] ??
     data.jurisdictionType;
 
+  const isSubCase = data.subCaseType !== null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -137,6 +140,22 @@ export function CaseDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           {es.cases.backToList}
         </Button>
+        {isSubCase && data.parent && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
+            <Network className="h-4 w-4 text-primary" />
+            <span className="text-muted-foreground">
+              {es.cases.detail.subCaseBanner}
+            </span>
+            <Link
+              to={`/cases/${data.parent.id}`}
+              className="font-medium text-primary hover:underline"
+            >
+              {data.parent.caseNumber
+                ? `${data.parent.caseNumber} — ${data.parent.caseTitle}`
+                : data.parent.caseTitle}
+            </Link>
+          </div>
+        )}
         <PageHeader
           title={data.caseTitle}
           description={data.caseNumber ?? undefined}
@@ -209,6 +228,14 @@ export function CaseDetailPage() {
             {data.upcomingEventCount > 0 && (
               <span className="ml-1 text-xs text-muted-foreground">
                 ({data.upcomingEventCount})
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="subCases">
+            {es.cases.subCases.tabLabel}
+            {data.subCaseCount > 0 && (
+              <span className="ml-1 text-xs text-muted-foreground">
+                ({data.subCaseCount})
               </span>
             )}
           </TabsTrigger>
@@ -298,6 +325,10 @@ export function CaseDetailPage() {
 
         <TabsContent value="events">
           <EmptyTab message={es.cases.detail.empty.events} />
+        </TabsContent>
+
+        <TabsContent value="subCases">
+          <SubCasesTab parent={data} />
         </TabsContent>
       </Tabs>
 

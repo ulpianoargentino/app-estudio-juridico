@@ -186,6 +186,8 @@ export const es = {
       },
       loadError: "No pudimos cargar el expediente.",
       notFound: "Expediente no encontrado.",
+      subCaseBanner: "Este es un subexpediente de",
+      subCaseBannerLink: "Ver expediente padre",
     },
     archive: {
       title: "Archivar expediente",
@@ -209,6 +211,52 @@ export const es = {
     validation: {
       titleRequired: "La carátula es obligatoria",
       jurisdictionTypeRequired: "Seleccioná el fuero",
+    },
+    subCases: {
+      tabLabel: "Subexpedientes",
+      sectionTitle: "Subexpedientes",
+      newButton: "Nuevo subexpediente",
+      firstButton: "Crear el primero",
+      empty: "Este expediente no tiene subexpedientes",
+      nestedNotAllowed:
+        "Los subexpedientes no pueden tener subexpedientes",
+      countSuffix: "subexpedientes",
+      countSuffixSingular: "subexpediente",
+      table: {
+        number: "Número",
+        type: "Tipo",
+        description: "Descripción",
+        status: "Estado",
+        createdAt: "Creado",
+      },
+      type: {
+        PLAINTIFF: "Actor",
+        DEFENDANT: "Demandado",
+        OTHER: "Otro",
+      },
+      form: {
+        title: "Nuevo subexpediente",
+        type: "Tipo",
+        typeHelp: "Determina el prefijo del número (A=Actor, D=Demandado, X=Otro)",
+        description: "Descripción",
+        descriptionPlaceholder: "Ej: documental, informativa, testimonial",
+        notes: "Notas",
+        inheritedTitle: "Hereda del expediente padre",
+        inheritedCourt: "Juzgado",
+        inheritedClient: "Cliente",
+        inheritedCaseTitle: "Carátula",
+        inheritedCaseNumber: "Número del padre",
+        cancel: "Cancelar",
+        save: "Crear subexpediente",
+      },
+      toast: {
+        created: "Subexpediente creado",
+        loadError: "No pudimos cargar los subexpedientes",
+        error: "Ocurrió un error",
+      },
+      validation: {
+        typeRequired: "Seleccioná el tipo",
+      },
     },
   },
   matters: {

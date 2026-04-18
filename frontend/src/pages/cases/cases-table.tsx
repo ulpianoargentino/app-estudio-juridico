@@ -46,7 +46,20 @@ export function CasesTable({
     {
       key: "caseTitle",
       header: es.cases.table.caseTitle,
-      render: (row) => <span className="font-medium">{row.caseTitle}</span>,
+      render: (row) => (
+        <span className="font-medium">
+          {row.caseTitle}
+          {row.subCaseCount > 0 && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              ({row.subCaseCount}{" "}
+              {row.subCaseCount === 1
+                ? es.cases.subCases.countSuffixSingular
+                : es.cases.subCases.countSuffix}
+              )
+            </span>
+          )}
+        </span>
+      ),
     },
     {
       key: "court",
