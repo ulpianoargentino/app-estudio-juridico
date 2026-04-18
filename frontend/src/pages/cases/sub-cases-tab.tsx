@@ -8,12 +8,7 @@ import { es } from "@/i18n/es";
 import type { CaseDetail, SubCaseListItem } from "@shared";
 import { SubCaseFormDialog } from "./sub-case-form-dialog";
 
-type CaseStatusKey = keyof typeof es.cases.status;
 type SubCaseTypeKey = keyof typeof es.cases.subCases.type;
-
-function statusLabel(s: string): string {
-  return es.cases.status[s as CaseStatusKey] ?? s;
-}
 
 function typeLabel(t: string): string {
   return es.cases.subCases.type[t as SubCaseTypeKey] ?? t;
@@ -102,9 +97,6 @@ export function SubCasesTab({ parent }: SubCasesTabProps) {
                   {es.cases.subCases.table.type}
                 </th>
                 <th className="px-4 py-2 text-left">
-                  {es.cases.subCases.table.caseTitle}
-                </th>
-                <th className="px-4 py-2 text-left">
                   {es.cases.subCases.table.description}
                 </th>
                 <th className="px-4 py-2 text-left">
@@ -138,20 +130,21 @@ export function SubCasesTab({ parent }: SubCasesTabProps) {
                     )}
                   </td>
                   <td className="px-4 py-2">
-                    <span className="line-clamp-1">{sub.caseTitle}</span>
-                  </td>
-                  <td className="px-4 py-2">
                     {sub.subCaseDescription ?? "—"}
                   </td>
                   <td className="px-4 py-2">
-                    <StatusBadge
-                      status={sub.status}
-                      label={statusLabel(sub.status)}
-                    />
-                    {!sub.isActive && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        ({es.cases.detail.archivedBadge})
-                      </span>
+                    {sub.isActive ? (
+                      <StatusBadge
+                        status="ACTIVE"
+                        variant="success"
+                        label={es.cases.subCases.table.statusActive}
+                      />
+                    ) : (
+                      <StatusBadge
+                        status="ARCHIVED"
+                        variant="neutral"
+                        label={es.cases.subCases.table.statusArchived}
+                      />
                     )}
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">

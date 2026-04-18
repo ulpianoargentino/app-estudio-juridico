@@ -228,7 +228,9 @@ export const es = {
         caseTitle: "Carátula",
         description: "Descripción",
         status: "Estado",
-        createdAt: "Creado",
+        createdAt: "Fecha",
+        statusActive: "Activo",
+        statusArchived: "Archivado",
       },
       type: {
         EVIDENCE: "Prueba",
