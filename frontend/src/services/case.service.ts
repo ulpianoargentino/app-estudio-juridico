@@ -5,6 +5,8 @@ import type {
   CaseUpdateInput,
   CaseListItem,
   CaseDetail,
+  SubCaseCreateInput,
+  SubCaseListItem,
 } from "@shared";
 
 // El interceptor de `api.ts` desenvuelve el envelope `{ data: T }` del backend.
@@ -39,4 +41,19 @@ export async function archiveCase(id: string): Promise<void> {
 
 export async function unarchiveCase(id: string): Promise<void> {
   await apiClient.post(`/cases/${id}/unarchive`);
+}
+
+// ───── Subexpedientes (estilo Tucumán) ─────
+
+export async function listSubCases(caseId: string): Promise<SubCaseListItem[]> {
+  const res = await apiClient.get<SubCaseListItem[]>(`/cases/${caseId}/sub-cases`);
+  return res.data;
+}
+
+export async function createSubCase(
+  caseId: string,
+  input: SubCaseCreateInput
+): Promise<Case> {
+  const res = await apiClient.post<Case>(`/cases/${caseId}/sub-cases`, input);
+  return res.data;
 }

@@ -6,6 +6,8 @@ import type {
   CaseUpdateInput,
   CaseListItem,
   CaseDetail,
+  SubCaseCreateInput,
+  SubCaseListItem,
 } from "@shared";
 
 // Raíz común de todas las queries del dominio — permite invalidar con un solo
@@ -14,6 +16,7 @@ const casesRoot = ["cases"] as const;
 
 const casesListKey = (isActive: boolean) => [...casesRoot, "list", { isActive }] as const;
 const caseDetailKey = (id: string) => [...casesRoot, "detail", id] as const;
+const subCasesKey = (parentId: string) => [...casesRoot, "subCases", parentId] as const;
 
 export function useCases(isActive: boolean = true) {
   return useQuery<CaseListItem[]>({
@@ -69,6 +72,30 @@ export function useUnarchiveCase() {
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: casesRoot });
       qc.invalidateQueries({ queryKey: caseDetailKey(id) });
+    },
+  });
+}
+
+// ───── Subexpedientes ─────
+
+export function useSubCases(parentId: string | undefined) {
+  return useQuery<SubCaseListItem[]>({
+    queryKey: subCasesKey(parentId ?? ""),
+    queryFn: () => caseService.listSubCases(parentId!),
+    enabled: Boolean(parentId),
+  });
+}
+
+export function useCreateSubCase(parentId: string) {
+  const qc = useQueryClient();
+  return useMutation<Case, Error, SubCaseCreateInput>({
+    mutationFn: (input) => caseService.createSubCase(parentId, input),
+    onSuccess: () => {
+      // Invalida la lista de subs del padre, su detail (subCaseCount), y el
+      // listado principal de cases (sufijo "(N subexpedientes)").
+      qc.invalidateQueries({ queryKey: subCasesKey(parentId) });
+      qc.invalidateQueries({ queryKey: caseDetailKey(parentId) });
+      qc.invalidateQueries({ queryKey: casesRoot });
     },
   });
 }
