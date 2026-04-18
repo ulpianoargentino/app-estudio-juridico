@@ -2,6 +2,18 @@
 
 > Reporte de estado del repo contra las reglas de [CLAUDE.md](CLAUDE.md). No incluye implementaciones: solo relevamiento.
 
+## Actualización 2026-04-17 — Tarea D1 (Módulo Expedientes)
+
+Cambios aplicados después de la foto del 2026-04-16:
+
+- **`caseStatus` unificado a 15 valores** (antes 10 + la idea de `procedural_stages` aparte). Nuevos valores: `AWAITING_INTERLOCUTORY`, `ON_APPEAL`, `FINAL_JUDGMENT`, `INCIDENT`, `EXPIRED`, `CLOSED`. Se eliminó `ARCHIVED` del enum — el "archivo" se representa con `is_active = false` en la columna existente, no como un estado procesal.
+- **Archive / Unarchive** reemplaza al `softDelete`: `POST /api/cases/:id/archive` + `POST /api/cases/:id/unarchive`. `DELETE /api/cases/:id` sigue mapeado a archive (no hay hard delete).
+- **Módulo Cases — UI completa**: listado con tabs `En Trámite` / `Archivados` ([frontend/src/pages/cases/index.tsx](frontend/src/pages/cases/index.tsx)), detalle con sub-tabs, formulario page-route (`/cases/new` y `/cases/:id/edit`).
+- **Selectors con inline-create**: `PersonSelect` y el nuevo `CourtSelect` exponen `allowCreate` para abrir el form-dialog del dominio y auto-seleccionar el registro recién creado. `PersonSelect` sin `allowCreate` conserva el comportamiento anterior.
+- **`@radix-ui/react-tabs`** instalado + wrapper shadcn en [frontend/src/components/ui/tabs.tsx](frontend/src/components/ui/tabs.tsx).
+
+Las filas afectadas del inventario de abajo (módulo #2 Expedientes, módulo #6 Juzgados, C1 #1) quedan marcadas como actualizadas en línea.
+
 ## Nota preliminar — Documentos de referencia
 
 De los 5 documentos pedidos, **solo 2 existen en la raíz del repo**:
@@ -160,11 +172,11 @@ Notación: **COMPLETO** / **BACKEND COMPLETO** (sin UI) / **SOLO SCHEMA** / **ST
 | # | Módulo | Estado | Explicación |
 |---|---|---|---|
 | 1 | Autenticación + Firms + Users | **COMPLETO** | Backend (service+controller+routes), UI (login+register+protected-route+auth-context). Cookies httpOnly, JWT 7 días. [auth.service.ts](backend/src/services/auth.service.ts) |
-| 2 | Expedientes (Cases) | **BACKEND COMPLETO** | Schema + service con validaciones de relación + controller + routes con summary + validators Zod. **UI: `/cases` es un `PlaceholderPage` ([App.tsx:41](frontend/src/App.tsx:41))** |
+| 2 | Expedientes (Cases) | **COMPLETO (2026-04-17)** | Backend CRUD + archive/unarchive + summary. UI en [frontend/src/pages/cases/](frontend/src/pages/cases/): listado con tabs `En Trámite` / `Archivados`, form page en `/cases/new` y `/cases/:id/edit`, detalle con sub-tabs. `caseStatus` ampliado a 15 valores |
 | 3 | Otros Casos (Matters) | **BACKEND COMPLETO** | Igual que cases + endpoint `/convert` que crea Case y copia parties, movements, documents, events (transaccional — [matter.service.ts:214-305](backend/src/services/matter.service.ts)). **UI: placeholder** |
 | 4 | Directorio de Personas | **BACKEND COMPLETO** | CRUD + `/search` para autocompletar. **UI: placeholder**. Existe `PersonSelect` ([person-select.tsx](frontend/src/components/ui/person-select.tsx)) listo para usarse en forms |
 | 5 | Partes (Parties) | **BACKEND COMPLETO** | Sub-rutas `/:caseId/parties` y `/:matterId/parties` con add/remove/list. Valida duplicados y pertenencia al firm. **UI: nada** |
-| 6 | Juzgados (Courts) | **BACKEND COMPLETO** | CRUD completo — no está en la lista original del pedido pero es el sexto dominio con service/controller/routes. **UI: nada** |
+| 6 | Juzgados (Courts) | **BACKEND COMPLETO + UI parcial (2026-04-17)** | CRUD backend. UI parcial: `CourtSelect` + `CourtFormDialog` para crear desde el form de expediente ([courts/court-form-dialog.tsx](frontend/src/pages/courts/court-form-dialog.tsx)). Falta la página CRUD dedicada `/courts` |
 | 7 | Agenda y Eventos | **SOLO SCHEMA** | Tabla `events` definida ([events.ts](backend/src/models/events.ts)) pero **sin service, sin controller, sin route, sin UI**. CLAUDE.md §6 exige auto-agendar audiencias cuando se registra prueba — no implementado |
 | 8 | Movimientos / Actuaciones | **SOLO SCHEMA** | Tabla `movements` definida con check constraint XOR, pero sin service/controller/route/UI. Lo usa `case.service.findById` solo como `count()` |
 | 9 | Gestiones de Procuración (Errands) | **SOLO SCHEMA** | Tabla definida, resto vacío |
@@ -294,7 +306,7 @@ El tipado del frontend está roto para todo lo que no sea auth. Antes de constru
 
 | # | Funcionalidad MVP | Estado | % estimado | Bloqueadores |
 |---|---|---|---|---|
-| 1 | Gestión de Expedientes + Otros Casos | **BACKEND COMPLETO / UI 0%** | 50% | Frontend: `/cases` y `/matters` son placeholders. Tipos del frontend desactualizados. Se necesitan forms (crear/editar), tablas con filtros, vista detalle |
+| 1 | Gestión de Expedientes + Otros Casos | **CASES COMPLETO (2026-04-17) / MATTERS UI 0%** | 75% | Cases: listado + detalle + form + archive/unarchive. Falta búsqueda/filtros/paginación en listado (D3), sub-casos (D2) y la UI de Matters |
 | 2 | Directorio de Personas | **BACKEND COMPLETO / UI 0%** | 50% | `/persons` es placeholder. `PersonSelect` ya está, pero no hay CRUD UI |
 | 3 | Partes / Vínculos persona-expediente | **BACKEND COMPLETO / UI 0%** | 50% | Endpoints listos. Sin UI de vinculación dentro de la vista detalle |
 | 4 | Agenda y eventos | **SOLO SCHEMA** | 10% | Faltan service, controller, route, UI. Regla de auto-agendar audiencias (CLAUDE.md §6) no implementada |

@@ -90,10 +90,11 @@ Todas las pantallas de datos siguen los mismos patrones. No inventar variaciones
 - **Llamadas directas a axios desde componentes**: siempre pasar por el service del dominio y por un hook de React Query.
 - **useState para datos del servidor**: eso lo maneja React Query.
 
-### Ejemplo de referencia — módulo Personas
+### Ejemplos de referencia — módulos Personas y Expedientes
 
-El módulo Personas es la implementación de referencia de estos patrones. Los próximos módulos (cases, matters, parties, courts, etc.) deben seguir la misma estructura y nomenclatura:
+Los módulos **Personas** (form chico → modal) y **Expedientes** (form grande → page) son las dos implementaciones de referencia de estos patrones. Los próximos módulos deben seguir la estructura y nomenclatura de uno u otro según el criterio de tamaño del form (ver abajo).
 
+**Módulo Personas — form chico en modal:**
 - [frontend/src/services/person.service.ts](frontend/src/services/person.service.ts) — funciones axios tipadas con `@shared`.
 - [frontend/src/hooks/queries/persons.ts](frontend/src/hooks/queries/persons.ts) — `usePersons`, `useCreatePerson`, `useUpdatePerson`, `useDeletePerson`. Mutations invalidan `['persons']` en onSuccess.
 - [frontend/src/pages/persons/](frontend/src/pages/persons/) — carpeta por dominio con `index.tsx` (página) y subcomponentes colocados:
@@ -101,6 +102,18 @@ El módulo Personas es la implementación de referencia de estos patrones. Los p
 - Formulario: `react-hook-form` + `zodResolver(personCreateSchema)` (`@shared`). Strings vacíos se convierten a `undefined` antes de enviar para no fallar validaciones `.email()` / `.url()`.
 - Toast feedback: `sonner` (importado como `toast.success` / `toast.error`). `<Toaster />` global está montado una sola vez en [frontend/src/App.tsx](frontend/src/App.tsx).
 - Soft delete: el backend cambia `is_active = false`; el `findAll` filtra por `is_active = true` por default. Nunca hay DELETE físico.
+
+**Módulo Expedientes — form grande en página propia + tabs + archive/unarchive:**
+- [frontend/src/services/case.service.ts](frontend/src/services/case.service.ts), [frontend/src/services/court.service.ts](frontend/src/services/court.service.ts).
+- [frontend/src/hooks/queries/cases.ts](frontend/src/hooks/queries/cases.ts) — `useCases(isActive)`, `useCase(id)`, `useCreateCase`, `useUpdateCase`, `useArchiveCase`, `useUnarchiveCase`. La clave raíz `['cases']` permite invalidar con un único prefijo todas las variantes.
+- [frontend/src/pages/cases/](frontend/src/pages/cases/) — `index.tsx` (listado con tabs), `cases-table.tsx`, `cases-empty-state.tsx`, `archive-case-dialog.tsx`, `case-form-page.tsx` (ruta propia, no modal), `case-detail-page.tsx` (detalle con sub-tabs).
+- Rutas: `/cases`, `/cases/new`, `/cases/:id`, `/cases/:id/edit`.
+- Tabs `En Trámite` / `Archivados` vía `@/components/ui/tabs` (wrapper shadcn de `@radix-ui/react-tabs`). El tab activo vive en la URL (`?tab=archived`) con `useSearchParams`.
+- Selectors con inline-create: `PersonSelect` y `CourtSelect` aceptan `allowCreate` (default `false`). Cuando es `true` muestran una acción "Crear nueva persona/juzgado" que abre el form-dialog del dominio y auto-selecciona el registro recién creado.
+- Archive / unarchive: no hay DELETE físico. `POST /api/cases/:id/archive` + `/unarchive`; `DELETE /api/cases/:id` sigue mapeado a archive por retro-compatibilidad.
+- Etiquetas de status y fuero vienen de `es.cases.status.*` y `es.cases.jurisdictionType.*`; el `StatusBadge` recibe el label traducido vía prop.
+
+**Criterio modal vs página:** si el formulario tiene pocos campos y cabe cómodo en un diálogo (Personas: tipo + nombre + contacto + dirección), usar un `*-form-dialog.tsx`. Si tiene secciones, selectores con autocompletado, o se navega desde/hacia otras vistas (Expedientes: identificación + clasificación + estado + cliente + montos + adicional), usar una página propia `*-form-page.tsx` con rutas `/modulo/new` y `/modulo/:id/edit`. El detalle suele justificar página propia siempre.
 
 ---
 
@@ -278,18 +291,25 @@ Este es el mapeo autoritativo entre el dominio jurídico argentino (español) y 
 
 ### Estados de expediente
 
+15 valores unificados (no hay una tabla `procedural_stages` aparte). "Archivado" NO es un status: se representa con `is_active = false` y endpoints `archive` / `unarchive`.
+
 | Español | Inglés (enum en código) |
 |---|---|
 | Inicio | INITIAL |
 | En trámite | IN_PROGRESS |
+| En mediación | IN_MEDIATION |
 | En prueba | EVIDENCE_STAGE |
 | Alegatos | CLOSING_ARGUMENTS |
+| Para interlocutoria | AWAITING_INTERLOCUTORY |
 | Para sentencia | AWAITING_JUDGMENT |
-| Sentencia | JUDGMENT_ISSUED |
+| Sentencia dictada | JUDGMENT_ISSUED |
+| En apelación | ON_APPEAL |
+| Sentencia firme | FINAL_JUDGMENT |
 | En ejecución | IN_EXECUTION |
-| Archivado | ARCHIVED |
+| Incidente | INCIDENT |
 | Paralizado | SUSPENDED |
-| Mediación | IN_MEDIATION |
+| Caducado | EXPIRED |
+| Terminado | CLOSED |
 
 ### Estados de otro caso (Matter)
 
@@ -463,11 +483,11 @@ Toda tabla incluye estas columnas desde el día uno:
 | Módulo | Estado | Notas |
 |---|---|---|
 | Autenticación + Firms + Users | **COMPLETO** | Backend + UI (login/register/protected-route). JWT cookies httpOnly, 7 días |
-| Expedientes (Cases) | **BACKEND COMPLETO** | Service + controller + routes con summary. UI `/cases` es placeholder |
+| Expedientes (Cases) | **COMPLETO** | Backend con CRUD + archive/unarchive + summary. UI en `/cases`: listado con tabs `En Trámite` / `Archivados`, detalle `/cases/:id` con sub-tabs (Detalle/Movimientos/Partes/Documentos/Eventos), form page `/cases/new` y `/cases/:id/edit`. `caseStatus` unificado a 15 valores |
 | Otros Casos (Matters) | **BACKEND COMPLETO** | Incluye endpoint `/convert` (crea Case y copia parties, movements, documents, events transaccional). UI placeholder |
 | Directorio de Personas | **BACKEND COMPLETO** | CRUD + `/search`. UI placeholder. `PersonSelect` ya disponible para forms |
 | Partes (Parties) | **BACKEND COMPLETO** | Sub-rutas `/:caseId/parties` y `/:matterId/parties`. Valida duplicados y pertenencia al firm. Sin UI |
-| Juzgados (Courts) | **BACKEND COMPLETO** | CRUD. Sin UI |
+| Juzgados (Courts) | **BACKEND COMPLETO + UI parcial** | CRUD backend. UI parcial: `CourtSelect` + `CourtFormDialog` disponibles como inline-create dentro del form de expediente. Falta la página CRUD dedicada `/courts` |
 | Agenda y Eventos | **SOLO SCHEMA** | Tabla `events` definida; falta service/controller/route/UI. Regla de auto-agendar audiencias (§Reglas de Negocio Clave #5) sin implementar |
 | Movimientos / Actuaciones | **SOLO SCHEMA** | Tabla con check constraint XOR case/matter. Sin service/controller/route/UI |
 | Gestiones de Procuración (Errands) | **SOLO SCHEMA** | Tabla definida |
