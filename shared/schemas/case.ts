@@ -11,6 +11,7 @@ import {
   jurisdictionType,
   personType,
   partyRole,
+  subCaseType,
   enumValues,
 } from "./enums";
 
@@ -113,6 +114,10 @@ const caseRecordSchema = z.object({
   currency: z.string().nullable(),
   portalUrl: z.string().nullable(),
   notes: z.string().nullable(),
+  // Sub-expediente: NULL en padres y expedientes normales.
+  subCaseType: z.enum(enumValues(subCaseType)).nullable(),
+  subCaseSequence: z.number().int().nullable(),
+  subCaseDescription: z.string().nullable(),
   isActive: z.boolean(),
   ...auditFieldsSchema.shape,
 });
@@ -122,10 +127,12 @@ export const caseResponseSchema = caseRecordSchema;
 export type Case = z.infer<typeof caseResponseSchema>;
 
 // Row de lista (GET /api/cases): record + nombres del cliente y abogado.
-// Ver case.service.ts::findAll.
+// Ver case.service.ts::findAll. El listado principal sólo trae padres
+// (subCaseType IS NULL); subCaseCount cuenta hijos activos.
 export const caseListItemSchema = caseRecordSchema.extend({
   primaryClientName: z.string().nullable(),
   responsibleAttorneyName: z.string().nullable(),
+  subCaseCount: z.number().int().nonnegative().default(0),
 });
 export type CaseListItem = z.infer<typeof caseListItemSchema>;
 
@@ -177,9 +184,53 @@ export const caseDetailSchema = caseRecordSchema.extend({
   movementCount: z.number().int().nonnegative(),
   documentCount: z.number().int().nonnegative(),
   upcomingEventCount: z.number().int().nonnegative(),
+  // Sólo presente si el case actual es un sub (subCaseType !== null).
+  parent: z
+    .object({
+      id: idSchema,
+      caseNumber: z.string().nullable(),
+      caseTitle: z.string(),
+    })
+    .nullable(),
+  subCaseCount: z.number().int().nonnegative().default(0),
 });
 export type CaseDetail = z.infer<typeof caseDetailSchema>;
 
 // GET /api/cases/summary — { status: count }
 export const caseSummarySchema = z.record(z.string(), z.number().int().nonnegative());
 export type CaseSummary = z.infer<typeof caseSummarySchema>;
+
+// POST /api/cases/:id/sub-cases
+// Sólo dos campos: el tipo (actor/demandado/otro) y una descripción libre
+// ("documental", "informativa", "testimonial", etc.). El resto se hereda del
+// padre (juzgado, carátula, cliente, abogado, fuero, jurisdicción).
+export const subCaseCreateSchema = z.object({
+  subCaseType: z.enum(enumValues(subCaseType), { error: "Tipo inválido" }),
+  subCaseDescription: z.string().nullish(),
+  notes: z.string().nullish(),
+});
+export type SubCaseCreateInput = z.infer<typeof subCaseCreateSchema>;
+
+// Item en el listado GET /api/cases/:id/sub-cases.
+// Vista chica: lo justo para mostrar tabla en la tab del padre.
+export const subCaseListItemSchema = z.object({
+  id: idSchema,
+  caseNumber: z.string().nullable(),
+  caseTitle: z.string(),
+  status: z.enum(enumValues(caseStatus)),
+  subCaseType: z.enum(enumValues(subCaseType)),
+  subCaseSequence: z.number().int(),
+  subCaseDescription: z.string().nullable(),
+  isActive: z.boolean(),
+  createdAt: timestampSchema,
+});
+export type SubCaseListItem = z.infer<typeof subCaseListItemSchema>;
+
+// Info del padre que se devuelve en el GET /api/cases/:id cuando :id es un sub.
+// Sirve para el banner "Este es un subexpediente de {carátula}" en el detalle.
+export const parentCaseSummarySchema = z.object({
+  id: idSchema,
+  caseNumber: z.string().nullable(),
+  caseTitle: z.string(),
+});
+export type ParentCaseSummary = z.infer<typeof parentCaseSummarySchema>;

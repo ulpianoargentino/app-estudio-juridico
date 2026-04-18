@@ -17,6 +17,10 @@ router.delete("/:id", caseController.remove);
 router.post("/:id/archive", caseController.archive);
 router.post("/:id/unarchive", caseController.unarchive);
 
+// Sub-expedientes (estilo Tucumán)
+router.get("/:id/sub-cases", caseController.listSubCases);
+router.post("/:id/sub-cases", caseController.createSubCase);
+
 // Party sub-routes for cases
 router.get("/:caseId/parties", partyController.listPartiesOfCase);
 router.post("/:caseId/parties", partyController.addPartyToCase);

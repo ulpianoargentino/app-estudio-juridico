@@ -1,9 +1,18 @@
-import { eq, and, or, ilike, asc, desc, count, gte, sql } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, count, gte, sql, inArray, isNull, max } from "drizzle-orm";
 import { db } from "../db";
-import { cases, persons, users, courts, parties, movements, documents, events } from "../models";
+import { cases, persons, users, courts, parties, movements, documents, events, caseLinks } from "../models";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
-import type { CaseCreateInput, CaseUpdateInput, CaseQuery } from "@shared";
+import { caseLinkType, subCaseType } from "@shared";
+import type { CaseCreateInput, CaseUpdateInput, CaseQuery, SubCaseCreateInput, SubCaseType } from "@shared";
+
+// Prefijo de número de subexpediente según el tipo (estilo Tucumán).
+// Padre 111/2026 → hijos 111/2026-A1 (actor), 111/2026-D1 (demandado), 111/2026-X1 (otro).
+const SUB_CASE_PREFIX: Record<SubCaseType, string> = {
+  PLAINTIFF: "A",
+  DEFENDANT: "D",
+  OTHER: "X",
+};
 
 type CreateCaseData = CaseCreateInput;
 type UpdateCaseData = CaseUpdateInput;
@@ -81,7 +90,9 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
   const clientPerson = persons;
   const attorneyUser = users;
 
-  const conditions = [eq(cases.firmId, firmId)];
+  // El listado principal sólo trae padres/expedientes normales. Los sub
+  // (subCaseType IS NOT NULL) se ven dentro de la tab "Subexpedientes" del padre.
+  const conditions = [eq(cases.firmId, firmId), isNull(cases.subCaseType)];
 
   if (filters.isActive !== undefined) {
     conditions.push(eq(cases.isActive, filters.isActive));
@@ -149,7 +160,13 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
 
   const total = totalResult[0]?.count ?? 0;
 
-  // Format response to include client/attorney names
+  // Conteo batch de subexpedientes activos para los padres devueltos.
+  // Se cuentan hijos (cases) que tengan link SUB_CASE en case_links donde
+  // case_id_1 = padre.id, y que estén activos.
+  const parentIds = data.map((r) => r.id);
+  const subCounts = await getSubCaseCounts(firmId, parentIds);
+
+  // Format response to include client/attorney names + sub count
   const formatted = data.map((row) => ({
     id: row.id,
     firmId: row.firmId,
@@ -167,6 +184,9 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
     currency: row.currency,
     portalUrl: row.portalUrl,
     notes: row.notes,
+    subCaseType: null as string | null,
+    subCaseSequence: null as number | null,
+    subCaseDescription: null as string | null,
     isActive: row.isActive,
     createdBy: row.createdBy,
     createdAt: row.createdAt,
@@ -178,12 +198,41 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
     responsibleAttorneyName: row.attorneyFirstName && row.attorneyLastName
       ? `${row.attorneyLastName}, ${row.attorneyFirstName}`
       : null,
+    subCaseCount: subCounts[row.id] ?? 0,
   }));
 
   return {
     data: formatted,
     meta: { total, page: filters.page, limit: filters.limit, totalPages: Math.ceil(total / filters.limit) },
   };
+}
+
+// Cuenta hijos activos por padre. Devuelve un mapa { parentId: count }.
+// Se usa en findAll (batch para el listado) y en findById (un solo padre).
+export async function getSubCaseCounts(
+  firmId: string,
+  parentIds: string[]
+): Promise<Record<string, number>> {
+  if (parentIds.length === 0) return {};
+  const rows = await db
+    .select({
+      parentId: caseLinks.caseId1,
+      count: count(cases.id),
+    })
+    .from(caseLinks)
+    .innerJoin(cases, eq(caseLinks.caseId2, cases.id))
+    .where(
+      and(
+        eq(caseLinks.firmId, firmId),
+        eq(caseLinks.linkType, caseLinkType.SUB_CASE),
+        inArray(caseLinks.caseId1, parentIds),
+        eq(cases.isActive, true)
+      )
+    )
+    .groupBy(caseLinks.caseId1);
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.parentId] = r.count;
+  return map;
 }
 
 export async function findById(firmId: string, id: string) {
@@ -237,6 +286,34 @@ export async function findById(firmId: string, id: string) {
     ),
   ]);
 
+  // Si el case es un sub, buscar el padre (para el banner del frontend).
+  // Si es un padre/normal, contar sus hijos activos (para la tab Subexpedientes).
+  let parent: { id: string; caseNumber: string | null; caseTitle: string } | null = null;
+  let subCaseCount = 0;
+
+  if (caseRow.subCaseType) {
+    const [parentLink] = await db
+      .select({
+        id: cases.id,
+        caseNumber: cases.caseNumber,
+        caseTitle: cases.caseTitle,
+      })
+      .from(caseLinks)
+      .innerJoin(cases, eq(caseLinks.caseId1, cases.id))
+      .where(
+        and(
+          eq(caseLinks.firmId, firmId),
+          eq(caseLinks.linkType, caseLinkType.SUB_CASE),
+          eq(caseLinks.caseId2, id)
+        )
+      )
+      .limit(1);
+    parent = parentLink ?? null;
+  } else {
+    const counts = await getSubCaseCounts(firmId, [id]);
+    subCaseCount = counts[id] ?? 0;
+  }
+
   return {
     ...caseRow,
     court: courtData[0] ?? null,
@@ -246,6 +323,8 @@ export async function findById(firmId: string, id: string) {
     movementCount: movementCount[0]?.count ?? 0,
     documentCount: documentCount[0]?.count ?? 0,
     upcomingEventCount: upcomingEventCount[0]?.count ?? 0,
+    parent,
+    subCaseCount,
   };
 }
 
@@ -287,12 +366,192 @@ async function setActive(firmId: string, id: string, userId: string, isActive: b
     .where(and(eq(cases.id, id), eq(cases.firmId, firmId)));
 }
 
+// Archivar el padre archiva en cascada todos los hijos activos
+// (transaccional). Desarchivar NO desarchiva en cascada — cada hijo se
+// desarchiva manualmente desde su propio detalle.
 export async function archive(firmId: string, id: string, userId: string) {
-  await setActive(firmId, id, userId, false);
+  await db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: cases.id, subCaseType: cases.subCaseType })
+      .from(cases)
+      .where(and(eq(cases.id, id), eq(cases.firmId, firmId)))
+      .limit(1);
+    if (!existing) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+
+    const now = new Date();
+    await tx
+      .update(cases)
+      .set({ isActive: false, updatedBy: userId, updatedAt: now })
+      .where(and(eq(cases.id, id), eq(cases.firmId, firmId)));
+
+    // Sólo archivamos hijos cuando el case es un padre (no sub de sub).
+    if (!existing.subCaseType) {
+      const childRows = await tx
+        .select({ childId: caseLinks.caseId2 })
+        .from(caseLinks)
+        .where(
+          and(
+            eq(caseLinks.firmId, firmId),
+            eq(caseLinks.linkType, caseLinkType.SUB_CASE),
+            eq(caseLinks.caseId1, id)
+          )
+        );
+      const childIds = childRows.map((r) => r.childId);
+      if (childIds.length > 0) {
+        await tx
+          .update(cases)
+          .set({ isActive: false, updatedBy: userId, updatedAt: now })
+          .where(
+            and(
+              eq(cases.firmId, firmId),
+              inArray(cases.id, childIds),
+              eq(cases.isActive, true)
+            )
+          );
+      }
+    }
+  });
 }
 
 export async function unarchive(firmId: string, id: string, userId: string) {
   await setActive(firmId, id, userId, true);
+}
+
+// Crea un sub-expediente vinculado al padre. Hereda automáticamente:
+// court, primaryClient, responsibleAttorney, jurisdictionType, jurisdiction,
+// caseTitle. Numera con prefijo según el tipo (A/D/X) y secuencial autoincr.
+// dentro del padre. Validaciones:
+//   - El padre debe existir y pertenecer al firm.
+//   - El padre NO puede ser él mismo un sub (no sub-de-sub).
+//   - El padre debe tener caseNumber (necesario para construir el del hijo).
+export async function createSubCase(
+  firmId: string,
+  parentId: string,
+  data: SubCaseCreateInput,
+  userId: string
+) {
+  return db.transaction(async (tx) => {
+    const [parent] = await tx
+      .select()
+      .from(cases)
+      .where(and(eq(cases.id, parentId), eq(cases.firmId, firmId)))
+      .limit(1);
+    if (!parent) throw new AppError(404, "CASE_NOT_FOUND", "Expediente padre no encontrado");
+    if (parent.subCaseType) {
+      throw new AppError(
+        400,
+        "NESTED_SUB_CASE_NOT_ALLOWED",
+        "Los subexpedientes no pueden tener subexpedientes"
+      );
+    }
+    if (!parent.caseNumber) {
+      throw new AppError(
+        400,
+        "PARENT_HAS_NO_NUMBER",
+        "El expediente padre debe tener un número antes de crear subexpedientes"
+      );
+    }
+
+    const prefix = SUB_CASE_PREFIX[data.subCaseType];
+
+    // Próximo secuencial dentro del prefijo. Vía MAX(sub_case_sequence) sobre
+    // los hijos vinculados con este tipo. Lock implícito por la transacción
+    // (no es ironclad bajo carga concurrente alta, pero el caso de uso es un
+    // abogado creando subs uno a uno — alcanza).
+    const [maxRow] = await tx
+      .select({ max: max(cases.subCaseSequence) })
+      .from(cases)
+      .innerJoin(caseLinks, eq(caseLinks.caseId2, cases.id))
+      .where(
+        and(
+          eq(caseLinks.firmId, firmId),
+          eq(caseLinks.linkType, caseLinkType.SUB_CASE),
+          eq(caseLinks.caseId1, parentId),
+          eq(cases.subCaseType, data.subCaseType)
+        )
+      );
+    const nextSequence = (maxRow?.max ?? 0) + 1;
+    const childCaseNumber = `${parent.caseNumber}-${prefix}${nextSequence}`;
+
+    const childId = uuidv7();
+    const [child] = await tx
+      .insert(cases)
+      .values({
+        id: childId,
+        firmId,
+        caseNumber: childCaseNumber,
+        caseTitle: parent.caseTitle, // hereda la carátula del padre
+        jurisdictionType: parent.jurisdictionType,
+        jurisdiction: parent.jurisdiction,
+        courtId: parent.courtId,
+        processType: parent.processType,
+        status: parent.status,
+        primaryClientId: parent.primaryClientId,
+        responsibleAttorneyId: parent.responsibleAttorneyId,
+        startDate: parent.startDate,
+        claimedAmount: null,
+        currency: parent.currency,
+        portalUrl: null,
+        notes: data.notes ?? null,
+        subCaseType: data.subCaseType,
+        subCaseSequence: nextSequence,
+        subCaseDescription: data.subCaseDescription ?? null,
+        createdBy: userId,
+        updatedBy: userId,
+      })
+      .returning();
+
+    await tx.insert(caseLinks).values({
+      id: uuidv7(),
+      firmId,
+      caseId1: parentId, // padre
+      caseId2: childId, // hijo
+      linkType: caseLinkType.SUB_CASE,
+      notes: null,
+      createdBy: userId,
+      updatedBy: userId,
+    });
+
+    return child!;
+  });
+}
+
+// Lista los subs activos e inactivos de un padre, ordenados por
+// (subCaseType, subCaseSequence). Multi-tenant. No pagina (en la práctica un
+// padre tiene <20 subs).
+export async function listSubCases(firmId: string, parentId: string) {
+  // Validar que el padre existe y pertenece al firm.
+  const [parent] = await db
+    .select({ id: cases.id })
+    .from(cases)
+    .where(and(eq(cases.id, parentId), eq(cases.firmId, firmId)))
+    .limit(1);
+  if (!parent) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+
+  const rows = await db
+    .select({
+      id: cases.id,
+      caseNumber: cases.caseNumber,
+      caseTitle: cases.caseTitle,
+      status: cases.status,
+      subCaseType: cases.subCaseType,
+      subCaseSequence: cases.subCaseSequence,
+      subCaseDescription: cases.subCaseDescription,
+      isActive: cases.isActive,
+      createdAt: cases.createdAt,
+    })
+    .from(caseLinks)
+    .innerJoin(cases, eq(caseLinks.caseId2, cases.id))
+    .where(
+      and(
+        eq(caseLinks.firmId, firmId),
+        eq(caseLinks.linkType, caseLinkType.SUB_CASE),
+        eq(caseLinks.caseId1, parentId)
+      )
+    )
+    .orderBy(asc(cases.subCaseType), asc(cases.subCaseSequence));
+
+  return rows;
 }
 
 export async function getCaseSummary(firmId: string) {
