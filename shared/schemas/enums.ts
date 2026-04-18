@@ -129,8 +129,18 @@ export const caseLinkType = {
   RELATED: "RELATED",
   ACCUMULATED: "ACCUMULATED",
   INCIDENT: "INCIDENT",
+  SUB_CASE: "SUB_CASE",
 } as const;
 export type CaseLinkType = (typeof caseLinkType)[keyof typeof caseLinkType];
+
+// Tipo del subexpediente (estilo Tucumán: cuadernos de prueba).
+// PLAINTIFF = prueba del actor, DEFENDANT = prueba del demandado, OTHER = otros.
+export const subCaseType = {
+  PLAINTIFF: "PLAINTIFF",
+  DEFENDANT: "DEFENDANT",
+  OTHER: "OTHER",
+} as const;
+export type SubCaseType = (typeof subCaseType)[keyof typeof subCaseType];
 
 export const portal = {
   MEV_BUENOS_AIRES: "MEV_BUENOS_AIRES",

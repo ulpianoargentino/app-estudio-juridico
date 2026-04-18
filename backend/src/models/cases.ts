@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, numeric, integer } from "drizzle-orm/pg-core";
 import { firms } from "./firms";
 import { users } from "./users";
 import { persons } from "./persons";
@@ -21,6 +21,12 @@ export const cases = pgTable("cases", {
   currency: text("currency").default("ARS"),
   portalUrl: text("portal_url"),
   notes: text("notes"),
+  // Sub-expediente (estilo Tucumán). Si subCaseType es NULL, el case es un
+  // expediente padre/normal. Si está seteado, es un hijo de otro case (vínculo
+  // se guarda en case_links con linkType = SUB_CASE).
+  subCaseType: text("sub_case_type"), // SubCaseType enum
+  subCaseSequence: integer("sub_case_sequence"),
+  subCaseDescription: text("sub_case_description"),
   isActive: boolean("is_active").notNull().default(true),
   createdBy: text("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
