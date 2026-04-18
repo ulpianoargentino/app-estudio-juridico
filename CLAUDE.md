@@ -309,6 +309,40 @@ Este es el mapeo autoritativo entre el dominio jurídico argentino (español) y 
 | Paralizado | SUSPENDED |
 | Terminado | CLOSED |
 
+### Subexpedientes (estilo Tucumán)
+
+Un expediente padre puede tener subexpedientes (cuadernos de prueba): por
+ejemplo padre `111/2026 — Pérez c/ Pérez` → hijos `111/2026-A1` (actor,
+documental), `111/2026-A2` (actor, informativa), `111/2026-D1` (demandado,
+documental).
+
+Reglas:
+
+- **El sub es un `case` completo** en la tabla `cases`. La diferencia con un
+  expediente normal es que tiene `sub_case_type` seteado (`PLAINTIFF` /
+  `DEFENDANT` / `OTHER`) y `sub_case_sequence` con el número consecutivo. El
+  vínculo padre-hijo se guarda en `case_links` con `link_type = SUB_CASE`
+  (`case_id_1` = padre, `case_id_2` = hijo).
+- **Listado principal `/cases` solo muestra padres** (`sub_case_type IS NULL`).
+  Los hijos se ven dentro de la tab "Subexpedientes" del padre. Cada padre
+  muestra "(N subexpedientes)" al lado de la carátula cuando `subCaseCount > 0`.
+- **Numeración automática:** prefijo según tipo (`A`/`D`/`X`) + secuencial
+  autoincr dentro del padre+tipo. El número del hijo es
+  `{padre.caseNumber}-{prefijo}{seq}`. **El padre debe tener `caseNumber`**;
+  si no, el backend devuelve 400 `PARENT_HAS_NO_NUMBER`.
+- **Herencia al crear:** el sub copia del padre `courtId`, `primaryClientId`,
+  `responsibleAttorneyId`, `jurisdictionType`, `jurisdiction`, `caseTitle`,
+  `processType`, `status`, `currency`, `startDate`. Después no hay sync
+  dinámico — si el padre cambia, el hijo no cambia.
+- **Archive en cascada:** archivar el padre archiva en cascada todos los
+  hijos activos (transaccional). **Desarchivar NO es cascada** — cada hijo
+  se desarchiva manualmente desde su propio detalle.
+- **No-sub-de-sub:** un hijo no puede tener hijos. Validado en backend
+  (`NESTED_SUB_CASE_NOT_ALLOWED`) y la tab del frontend muestra el mensaje
+  "Los subexpedientes no pueden tener subexpedientes".
+- **Endpoints:** `POST /api/cases/:id/sub-cases` (crear) y
+  `GET /api/cases/:id/sub-cases` (listar hijos del padre).
+
 ### Estados de otro caso (Matter)
 
 | Español | Inglés (enum en código) |
@@ -481,7 +515,7 @@ Toda tabla incluye estas columnas desde el día uno:
 | Módulo | Estado | Notas |
 |---|---|---|
 | Autenticación + Firms + Users | **COMPLETO** | Backend + UI (login/register/protected-route). JWT cookies httpOnly, 7 días |
-| Expedientes (Cases) | **COMPLETO** | Backend con CRUD + archive/unarchive + summary. UI en `/cases`: listado con tabs `En Trámite` / `Archivados`, detalle `/cases/:id` con sub-tabs (Detalle/Movimientos/Partes/Documentos/Eventos), form page `/cases/new` y `/cases/:id/edit`. `caseStatus` unificado a 13 valores |
+| Expedientes (Cases) | **COMPLETO** | Backend con CRUD + archive/unarchive + summary + subexpedientes (estilo Tucumán: `/cases/:id/sub-cases`). UI en `/cases`: listado con tabs `En Trámite` / `Archivados` (sufijo "(N subexpedientes)" cuando aplica), detalle `/cases/:id` con sub-tabs (Detalle/Movimientos/Partes/Documentos/Eventos/Subexpedientes), form page `/cases/new` y `/cases/:id/edit`. `caseStatus` unificado a 13 valores. Archive en cascada padre→hijos. Banner de padre en detalle del sub |
 | Otros Casos (Matters) | **BACKEND COMPLETO** | Incluye endpoint `/convert` (crea Case y copia parties, movements, documents, events transaccional). UI placeholder |
 | Directorio de Personas | **BACKEND COMPLETO** | CRUD + `/search`. UI placeholder. `PersonSelect` ya disponible para forms |
 | Partes (Parties) | **BACKEND COMPLETO** | Sub-rutas `/:caseId/parties` y `/:matterId/parties`. Valida duplicados y pertenencia al firm. Sin UI |
