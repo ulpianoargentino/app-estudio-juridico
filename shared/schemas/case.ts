@@ -114,9 +114,12 @@ const caseRecordSchema = z.object({
   currency: z.string().nullable(),
   portalUrl: z.string().nullable(),
   notes: z.string().nullable(),
-  // Sub-expediente: NULL en padres y expedientes normales.
+  // Sub-expediente: NULL en padres y expedientes normales. En subs:
+  //   subCaseType    — opcional (EVIDENCE/INCIDENT/OTHER) o NULL
+  //   subCaseNumber  — opcional, texto libre. La UI lo muestra concatenado
+  //                    como "{padre.caseNumber}-{subCaseNumber}".
   subCaseType: z.enum(enumValues(subCaseType)).nullable(),
-  subCaseSequence: z.number().int().nullable(),
+  subCaseNumber: z.string().nullable(),
   subCaseDescription: z.string().nullable(),
   isActive: z.boolean(),
   ...auditFieldsSchema.shape,
@@ -201,11 +204,20 @@ export const caseSummarySchema = z.record(z.string(), z.number().int().nonnegati
 export type CaseSummary = z.infer<typeof caseSummarySchema>;
 
 // POST /api/cases/:id/sub-cases
-// Sólo dos campos: el tipo (actor/demandado/otro) y una descripción libre
-// ("documental", "informativa", "testimonial", etc.). El resto se hereda del
-// padre (juzgado, carátula, cliente, abogado, fuero, jurisdicción).
+// Modelo flexible: TODOS los campos son opcionales.
+//   subCaseType         — opcional. Si viene, EVIDENCE/INCIDENT/OTHER.
+//   subCaseNumber       — opcional, texto libre. La UI sugiere "A1/I1/X1" según
+//                         el tipo via endpoint /next-number, pero el usuario
+//                         puede escribir cualquier cosa o dejar vacío.
+//   caseTitle           — opcional. Si no viene, se hereda del padre.
+//   subCaseDescription  — opcional, texto libre.
+//   notes               — opcional.
+// El resto (juzgado, cliente, abogado, fuero, jurisdicción) siempre se hereda
+// del padre.
 export const subCaseCreateSchema = z.object({
-  subCaseType: z.enum(enumValues(subCaseType), { error: "Tipo inválido" }),
+  subCaseType: z.enum(enumValues(subCaseType), { error: "Tipo inválido" }).nullish(),
+  subCaseNumber: z.string().nullish(),
+  caseTitle: z.string().nullish(),
   subCaseDescription: z.string().nullish(),
   notes: z.string().nullish(),
 });
@@ -213,14 +225,16 @@ export type SubCaseCreateInput = z.infer<typeof subCaseCreateSchema>;
 
 // Item en el listado GET /api/cases/:id/sub-cases.
 // Vista chica: lo justo para mostrar tabla en la tab del padre.
+// El frontend concatena el número con `parentCaseNumber` para renderizar
+// "{padre}-{sub}" — por eso parentCaseNumber viaja en cada row.
 export const subCaseListItemSchema = z.object({
   id: idSchema,
-  caseNumber: z.string().nullable(),
   caseTitle: z.string(),
   status: z.enum(enumValues(caseStatus)),
-  subCaseType: z.enum(enumValues(subCaseType)),
-  subCaseSequence: z.number().int(),
+  subCaseType: z.enum(enumValues(subCaseType)).nullable(),
+  subCaseNumber: z.string().nullable(),
   subCaseDescription: z.string().nullable(),
+  parentCaseNumber: z.string().nullable(),
   isActive: z.boolean(),
   createdAt: timestampSchema,
 });

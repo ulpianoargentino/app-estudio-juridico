@@ -1,0 +1,1 @@
+ALTER TABLE "cases" ADD COLUMN "sub_case_number" text;

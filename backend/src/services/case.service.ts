@@ -1,16 +1,17 @@
-import { eq, and, or, ilike, asc, desc, count, gte, sql, inArray, isNull, max } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, count, gte, sql, inArray, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { cases, persons, users, courts, parties, movements, documents, events, caseLinks } from "../models";
 import { uuidv7 } from "../utils/uuid";
 import { AppError } from "../middleware/error-handler";
-import { caseLinkType, subCaseType } from "@shared";
+import { caseLinkType } from "@shared";
 import type { CaseCreateInput, CaseUpdateInput, CaseQuery, SubCaseCreateInput, SubCaseType } from "@shared";
 
-// Prefijo de número de subexpediente según el tipo (estilo Tucumán).
-// Padre 111/2026 → hijos 111/2026-A1 (actor), 111/2026-D1 (demandado), 111/2026-X1 (otro).
-const SUB_CASE_PREFIX: Record<SubCaseType, string> = {
-  PLAINTIFF: "A",
-  DEFENDANT: "D",
+// Prefijo sugerido para el número del sub según el tipo. La sugerencia se
+// genera en /sub-cases/next-number y el frontend la muestra como placeholder
+// del input — el usuario puede aceptarla, editarla o dejar el campo vacío.
+export const SUB_CASE_PREFIX: Record<SubCaseType, string> = {
+  EVIDENCE: "A",
+  INCIDENT: "I",
   OTHER: "X",
 };
 
@@ -185,7 +186,7 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
     portalUrl: row.portalUrl,
     notes: row.notes,
     subCaseType: null as string | null,
-    subCaseSequence: null as number | null,
+    subCaseNumber: null as string | null,
     subCaseDescription: null as string | null,
     isActive: row.isActive,
     createdBy: row.createdBy,
@@ -417,13 +418,18 @@ export async function unarchive(firmId: string, id: string, userId: string) {
   await setActive(firmId, id, userId, true);
 }
 
-// Crea un sub-expediente vinculado al padre. Hereda automáticamente:
-// court, primaryClient, responsibleAttorney, jurisdictionType, jurisdiction,
-// caseTitle. Numera con prefijo según el tipo (A/D/X) y secuencial autoincr.
-// dentro del padre. Validaciones:
+// Crea un sub-expediente vinculado al padre. Modelo flexible:
+//   - Tipo y número son opcionales (texto libre el segundo). Si el usuario no
+//     los manda, el sub queda con esos campos en NULL.
+//   - Carátula opcional: si viene, se usa; si no, se hereda del padre.
+//   - Resto siempre se hereda del padre: court, primaryClient,
+//     responsibleAttorney, jurisdictionType, jurisdiction, processType,
+//     currency, startDate, status.
+// Validaciones:
 //   - El padre debe existir y pertenecer al firm.
 //   - El padre NO puede ser él mismo un sub (no sub-de-sub).
-//   - El padre debe tener caseNumber (necesario para construir el del hijo).
+// El campo `case_number` del sub queda en NULL — la UI muestra el número
+// computado como "{padre.caseNumber}-{sub.subCaseNumber}" cuando aplica.
 export async function createSubCase(
   firmId: string,
   parentId: string,
@@ -444,34 +450,13 @@ export async function createSubCase(
         "Los subexpedientes no pueden tener subexpedientes"
       );
     }
-    if (!parent.caseNumber) {
-      throw new AppError(
-        400,
-        "PARENT_HAS_NO_NUMBER",
-        "El expediente padre debe tener un número antes de crear subexpedientes"
-      );
-    }
 
-    const prefix = SUB_CASE_PREFIX[data.subCaseType];
-
-    // Próximo secuencial dentro del prefijo. Vía MAX(sub_case_sequence) sobre
-    // los hijos vinculados con este tipo. Lock implícito por la transacción
-    // (no es ironclad bajo carga concurrente alta, pero el caso de uso es un
-    // abogado creando subs uno a uno — alcanza).
-    const [maxRow] = await tx
-      .select({ max: max(cases.subCaseSequence) })
-      .from(cases)
-      .innerJoin(caseLinks, eq(caseLinks.caseId2, cases.id))
-      .where(
-        and(
-          eq(caseLinks.firmId, firmId),
-          eq(caseLinks.linkType, caseLinkType.SUB_CASE),
-          eq(caseLinks.caseId1, parentId),
-          eq(cases.subCaseType, data.subCaseType)
-        )
-      );
-    const nextSequence = (maxRow?.max ?? 0) + 1;
-    const childCaseNumber = `${parent.caseNumber}-${prefix}${nextSequence}`;
+    // Normalizar strings vacíos a null para que la DB no guarde "".
+    const normalizedNumber = data.subCaseNumber?.trim() || null;
+    const normalizedTitle = data.caseTitle?.trim();
+    const childTitle = normalizedTitle && normalizedTitle.length > 0
+      ? normalizedTitle
+      : parent.caseTitle;
 
     const childId = uuidv7();
     const [child] = await tx
@@ -479,8 +464,8 @@ export async function createSubCase(
       .values({
         id: childId,
         firmId,
-        caseNumber: childCaseNumber,
-        caseTitle: parent.caseTitle, // hereda la carátula del padre
+        caseNumber: null, // los subs no usan case_number propio; se computa en UI
+        caseTitle: childTitle,
         jurisdictionType: parent.jurisdictionType,
         jurisdiction: parent.jurisdiction,
         courtId: parent.courtId,
@@ -492,10 +477,10 @@ export async function createSubCase(
         claimedAmount: null,
         currency: parent.currency,
         portalUrl: null,
-        notes: data.notes ?? null,
-        subCaseType: data.subCaseType,
-        subCaseSequence: nextSequence,
-        subCaseDescription: data.subCaseDescription ?? null,
+        notes: data.notes?.trim() || null,
+        subCaseType: data.subCaseType ?? null,
+        subCaseNumber: normalizedNumber,
+        subCaseDescription: data.subCaseDescription?.trim() || null,
         createdBy: userId,
         updatedBy: userId,
       })
@@ -516,13 +501,14 @@ export async function createSubCase(
   });
 }
 
-// Lista los subs activos e inactivos de un padre, ordenados por
-// (subCaseType, subCaseSequence). Multi-tenant. No pagina (en la práctica un
-// padre tiene <20 subs).
+// Lista los subs (activos + archivados) de un padre. Devuelve también
+// `parentCaseNumber` en cada row para que el frontend pueda renderizar
+// "{padre.caseNumber}-{sub.subCaseNumber}" sin un fetch extra.
+// Orden: por createdAt asc (orden cronológico de carga).
 export async function listSubCases(firmId: string, parentId: string) {
   // Validar que el padre existe y pertenece al firm.
   const [parent] = await db
-    .select({ id: cases.id })
+    .select({ id: cases.id, caseNumber: cases.caseNumber })
     .from(cases)
     .where(and(eq(cases.id, parentId), eq(cases.firmId, firmId)))
     .limit(1);
@@ -531,11 +517,10 @@ export async function listSubCases(firmId: string, parentId: string) {
   const rows = await db
     .select({
       id: cases.id,
-      caseNumber: cases.caseNumber,
       caseTitle: cases.caseTitle,
       status: cases.status,
       subCaseType: cases.subCaseType,
-      subCaseSequence: cases.subCaseSequence,
+      subCaseNumber: cases.subCaseNumber,
       subCaseDescription: cases.subCaseDescription,
       isActive: cases.isActive,
       createdAt: cases.createdAt,
@@ -549,9 +534,9 @@ export async function listSubCases(firmId: string, parentId: string) {
         eq(caseLinks.caseId1, parentId)
       )
     )
-    .orderBy(asc(cases.subCaseType), asc(cases.subCaseSequence));
+    .orderBy(asc(cases.createdAt));
 
-  return rows;
+  return rows.map((r) => ({ ...r, parentCaseNumber: parent.caseNumber }));
 }
 
 export async function getCaseSummary(firmId: string) {

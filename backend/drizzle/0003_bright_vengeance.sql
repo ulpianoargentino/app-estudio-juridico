@@ -1,0 +1,1 @@
+ALTER TABLE "cases" DROP COLUMN "sub_case_sequence";

@@ -133,11 +133,15 @@ export const caseLinkType = {
 } as const;
 export type CaseLinkType = (typeof caseLinkType)[keyof typeof caseLinkType];
 
-// Tipo del subexpediente (estilo Tucumán: cuadernos de prueba).
-// PLAINTIFF = prueba del actor, DEFENDANT = prueba del demandado, OTHER = otros.
+// Tipo del subexpediente. Modelo flexible (no asume Tucumán): el sub puede ser
+// un cuaderno de prueba, un incidente o cualquier otro anexo. Tipo opcional
+// (puede quedar NULL en la columna).
+//   EVIDENCE  = "Prueba"     → prefijo sugerido "A"
+//   INCIDENT  = "Incidente"  → prefijo sugerido "I"
+//   OTHER     = "Otro"       → prefijo sugerido "X"
 export const subCaseType = {
-  PLAINTIFF: "PLAINTIFF",
-  DEFENDANT: "DEFENDANT",
+  EVIDENCE: "EVIDENCE",
+  INCIDENT: "INCIDENT",
   OTHER: "OTHER",
 } as const;
 export type SubCaseType = (typeof subCaseType)[keyof typeof subCaseType];

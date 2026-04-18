@@ -230,8 +230,8 @@ export const es = {
         createdAt: "Creado",
       },
       type: {
-        PLAINTIFF: "Actor",
-        DEFENDANT: "Demandado",
+        EVIDENCE: "Prueba",
+        INCIDENT: "Incidente",
         OTHER: "Otro",
       },
       form: {

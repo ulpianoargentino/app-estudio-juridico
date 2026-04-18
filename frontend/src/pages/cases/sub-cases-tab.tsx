@@ -120,13 +120,19 @@ export function SubCasesTab({ parent }: SubCasesTabProps) {
                   className="cursor-pointer hover:bg-muted/30"
                 >
                   <td className="px-4 py-2 font-medium">
-                    {sub.caseNumber ?? "—"}
+                    {sub.subCaseNumber && sub.parentCaseNumber
+                      ? `${sub.parentCaseNumber}-${sub.subCaseNumber}`
+                      : "—"}
                   </td>
                   <td className="px-4 py-2">
-                    <StatusBadge
-                      status={sub.subCaseType}
-                      label={typeLabel(sub.subCaseType)}
-                    />
+                    {sub.subCaseType ? (
+                      <StatusBadge
+                        status={sub.subCaseType}
+                        label={typeLabel(sub.subCaseType)}
+                      />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-2">
                     {sub.subCaseDescription ?? "—"}

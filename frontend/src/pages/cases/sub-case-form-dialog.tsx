@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner";
 
 type FormValues = {
-  subCaseType: "" | "PLAINTIFF" | "DEFENDANT" | "OTHER";
+  subCaseType: "" | "EVIDENCE" | "INCIDENT" | "OTHER";
   subCaseDescription: string;
   notes: string;
 };
@@ -117,11 +117,11 @@ export function SubCaseFormDialog({
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="">—</option>
-                  <option value={subCaseTypeEnum.PLAINTIFF}>
-                    {es.cases.subCases.type.PLAINTIFF}
+                  <option value={subCaseTypeEnum.EVIDENCE}>
+                    {es.cases.subCases.type.EVIDENCE}
                   </option>
-                  <option value={subCaseTypeEnum.DEFENDANT}>
-                    {es.cases.subCases.type.DEFENDANT}
+                  <option value={subCaseTypeEnum.INCIDENT}>
+                    {es.cases.subCases.type.INCIDENT}
                   </option>
                   <option value={subCaseTypeEnum.OTHER}>
                     {es.cases.subCases.type.OTHER}

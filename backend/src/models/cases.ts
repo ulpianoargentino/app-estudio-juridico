@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, numeric, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, numeric } from "drizzle-orm/pg-core";
 import { firms } from "./firms";
 import { users } from "./users";
 import { persons } from "./persons";
@@ -21,11 +21,12 @@ export const cases = pgTable("cases", {
   currency: text("currency").default("ARS"),
   portalUrl: text("portal_url"),
   notes: text("notes"),
-  // Sub-expediente (estilo Tucumán). Si subCaseType es NULL, el case es un
-  // expediente padre/normal. Si está seteado, es un hijo de otro case (vínculo
-  // se guarda en case_links con linkType = SUB_CASE).
-  subCaseType: text("sub_case_type"), // SubCaseType enum
-  subCaseSequence: integer("sub_case_sequence"),
+  // Sub-expediente. El discriminador "es sub" sigue siendo el vínculo en
+  // case_links (linkType = SUB_CASE). subCaseType y subCaseNumber son ambos
+  // OPCIONALES y de texto libre — el frontend sugiere prefijos (A/I/X) según
+  // el tipo, pero el usuario puede aceptar, editar o dejar vacío.
+  subCaseType: text("sub_case_type"), // SubCaseType enum (EVIDENCE/INCIDENT/OTHER) — nullable
+  subCaseNumber: text("sub_case_number"), // texto libre, nullable. Se concatena con padre.case_number en UI.
   subCaseDescription: text("sub_case_description"),
   isActive: boolean("is_active").notNull().default(true),
   createdBy: text("created_by").notNull().references(() => users.id),
