@@ -10,6 +10,9 @@ import { RegisterPage } from "@/pages/register";
 import { DashboardPage } from "@/pages/dashboard";
 import { PlaceholderPage } from "@/pages/placeholder";
 import { PersonsPage } from "@/pages/persons";
+import { CasesPage } from "@/pages/cases";
+import { CaseFormPage } from "@/pages/cases/case-form-page";
+import { CaseDetailPage } from "@/pages/cases/case-detail-page";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +43,10 @@ export function App() {
                 }
               >
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/cases" element={<PlaceholderPage title="cases" />} />
+                <Route path="/cases" element={<CasesPage />} />
+                <Route path="/cases/new" element={<CaseFormPage />} />
+                <Route path="/cases/:id" element={<CaseDetailPage />} />
+                <Route path="/cases/:id/edit" element={<CaseFormPage />} />
                 <Route path="/matters" element={<PlaceholderPage title="matters" />} />
                 <Route path="/persons" element={<PersonsPage />} />
                 <Route path="/calendar" element={<PlaceholderPage title="calendar" />} />

@@ -2,45 +2,59 @@ import { cn } from "@/lib/utils";
 
 type BadgeVariant = "success" | "warning" | "danger" | "neutral" | "info" | "default";
 
-// Mapeo de status del dominio a variantes visuales
+// Mapeo de status del dominio a variantes visuales.
+// Los labels visibles se resuelven desde i18n en cada caller (pasar `label`),
+// pero mantenemos un fallback hardcoded para status usados sin traducción.
 const statusVariantMap: Record<string, BadgeVariant> = {
-  // Case statuses
-  INITIAL: "default",
+  // Case statuses (15 valores unificados, sin procedural_stages aparte)
+  INITIAL: "info",
   IN_PROGRESS: "info",
+  IN_MEDIATION: "info",
   EVIDENCE_STAGE: "warning",
   CLOSING_ARGUMENTS: "warning",
+  AWAITING_INTERLOCUTORY: "warning",
   AWAITING_JUDGMENT: "warning",
   JUDGMENT_ISSUED: "success",
+  ON_APPEAL: "warning",
+  FINAL_JUDGMENT: "success",
   IN_EXECUTION: "info",
-  ARCHIVED: "neutral",
+  INCIDENT: "warning",
   SUSPENDED: "neutral",
-  IN_MEDIATION: "info",
+  EXPIRED: "neutral",
+  CLOSED: "neutral",
   // Matter statuses
   ACTIVE: "info",
   ON_HOLD: "default",
   COMPLETED: "success",
-  // Event statuses
+  ARCHIVED: "neutral",
+  // Event / errand statuses
   PENDING: "default",
   CANCELLED: "neutral",
-  // Errand statuses
   FAILED: "danger",
 };
 
-// Mapeo de status a texto en español
+// Fallback para cuando el caller no pasa `label`. Los consumidores de dominio
+// deberían pasar siempre la traducción explícita (es.cases.status.*, etc.).
 const statusLabelMap: Record<string, string> = {
   INITIAL: "Inicio",
   IN_PROGRESS: "En trámite",
+  IN_MEDIATION: "Mediación",
   EVIDENCE_STAGE: "En prueba",
   CLOSING_ARGUMENTS: "Alegatos",
+  AWAITING_INTERLOCUTORY: "Para interlocutoria",
   AWAITING_JUDGMENT: "Para sentencia",
   JUDGMENT_ISSUED: "Sentencia",
+  ON_APPEAL: "En apelación",
+  FINAL_JUDGMENT: "Sentencia firme",
   IN_EXECUTION: "En ejecución",
-  ARCHIVED: "Archivado",
+  INCIDENT: "Incidente",
   SUSPENDED: "Paralizado",
-  IN_MEDIATION: "Mediación",
+  EXPIRED: "Caducado",
+  CLOSED: "Terminado",
   ACTIVE: "Activo",
   ON_HOLD: "En espera",
   COMPLETED: "Finalizado",
+  ARCHIVED: "Archivado",
   PENDING: "Pendiente",
   CANCELLED: "Cancelado",
   FAILED: "Fallido",
