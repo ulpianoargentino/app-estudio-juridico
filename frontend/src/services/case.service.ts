@@ -7,6 +7,8 @@ import type {
   CaseDetail,
   SubCaseCreateInput,
   SubCaseListItem,
+  SubCaseType,
+  SubCaseNextNumberResponse,
 } from "@shared";
 
 // El interceptor de `api.ts` desenvuelve el envelope `{ data: T }` del backend.
@@ -55,5 +57,19 @@ export async function createSubCase(
   input: SubCaseCreateInput
 ): Promise<Case> {
   const res = await apiClient.post<Case>(`/cases/${caseId}/sub-cases`, input);
+  return res.data;
+}
+
+// Sugerencia del próximo número de sub para padre+tipo dado.
+// Responde { suggested: "A3" } por ejemplo. El frontend la usa como
+// placeholder del input — el usuario puede aceptar, editar o ignorar.
+export async function getNextSubCaseNumber(
+  parentId: string,
+  type: SubCaseType
+): Promise<SubCaseNextNumberResponse> {
+  const res = await apiClient.get<SubCaseNextNumberResponse>(
+    `/cases/${parentId}/sub-cases/next-number`,
+    { params: { type } }
+  );
   return res.data;
 }

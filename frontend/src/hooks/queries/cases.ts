@@ -8,6 +8,8 @@ import type {
   CaseDetail,
   SubCaseCreateInput,
   SubCaseListItem,
+  SubCaseType,
+  SubCaseNextNumberResponse,
 } from "@shared";
 
 // Raíz común de todas las queries del dominio — permite invalidar con un solo
@@ -97,5 +99,18 @@ export function useCreateSubCase(parentId: string) {
       qc.invalidateQueries({ queryKey: caseDetailKey(parentId) });
       qc.invalidateQueries({ queryKey: casesRoot });
     },
+  });
+}
+
+// Sugerencia del próximo número de sub. Solo dispara cuando hay tipo
+// seleccionado — el placeholder del input depende del tipo elegido.
+export function useNextSubCaseNumber(
+  parentId: string | undefined,
+  type: SubCaseType | "" | undefined
+) {
+  return useQuery<SubCaseNextNumberResponse>({
+    queryKey: [...casesRoot, "subCases", parentId ?? "", "nextNumber", type ?? ""] as const,
+    queryFn: () => caseService.getNextSubCaseNumber(parentId!, type as SubCaseType),
+    enabled: Boolean(parentId) && Boolean(type),
   });
 }
