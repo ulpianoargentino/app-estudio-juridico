@@ -45,6 +45,12 @@ export const es = {
   personSelect: {
     placeholder: "Seleccionar persona",
     searchPlaceholder: "Buscar persona...",
+    createNew: "Crear nueva persona",
+  },
+  courtSelect: {
+    placeholder: "Seleccionar juzgado",
+    searchPlaceholder: "Buscar juzgado...",
+    createNew: "Crear nuevo juzgado",
   },
   auth: {
     login: "Iniciar sesión",
@@ -81,6 +87,26 @@ export const es = {
     title: "Otros Casos",
     description: "Descripción",
     status: "Estado",
+  },
+  courts: {
+    form: {
+      createTitle: "Nuevo juzgado",
+      name: "Nombre del juzgado",
+      courtType: "Tipo",
+      courtTypePlaceholder: "Ej: Juzgado Civil y Comercial",
+      jurisdiction: "Jurisdicción",
+      jurisdictionPlaceholder: "Ej: Bahía Blanca",
+      address: "Dirección",
+      phone: "Teléfono",
+      email: "Email",
+      notes: "Notas",
+      cancel: "Cancelar",
+      save: "Guardar",
+    },
+    toast: {
+      created: "Juzgado creado",
+      error: "Ocurrió un error",
+    },
   },
   people: {
     title: "Personas",

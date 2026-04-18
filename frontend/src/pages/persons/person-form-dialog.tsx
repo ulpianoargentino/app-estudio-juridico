@@ -110,12 +110,17 @@ interface PersonFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   person?: Person | null;
+  // Callback opcional disparado tras una creación exitosa. Permite que un
+  // selector inline (PersonSelect con allowCreate) reciba la persona recién
+  // creada para auto-seleccionarla sin pasar por una búsqueda posterior.
+  onCreated?: (person: Person) => void;
 }
 
 export function PersonFormDialog({
   open,
   onOpenChange,
   person,
+  onCreated,
 }: PersonFormDialogProps) {
   const mode = person ? "edit" : "create";
   const createMutation = useCreatePerson();
@@ -153,8 +158,9 @@ export function PersonFormDialog({
         await updateMutation.mutateAsync({ id: person.id, input });
         toast.success(es.persons.toast.updated);
       } else {
-        await createMutation.mutateAsync(input);
+        const created = await createMutation.mutateAsync(input);
         toast.success(es.persons.toast.created);
+        onCreated?.(created);
       }
       onOpenChange(false);
     } catch (err) {

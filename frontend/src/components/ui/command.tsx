@@ -58,4 +58,16 @@ const CommandItem = React.forwardRef<
 ));
 CommandItem.displayName = "CommandItem";
 
-export { Command, CommandInput, CommandList, CommandEmpty, CommandItem };
+const CommandSeparator = React.forwardRef<
+  React.ComponentRef<typeof CommandPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <CommandPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 h-px bg-border", className)}
+    {...props}
+  />
+));
+CommandSeparator.displayName = "CommandSeparator";
+
+export { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandSeparator };
