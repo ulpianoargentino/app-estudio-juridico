@@ -240,6 +240,18 @@ export const subCaseListItemSchema = z.object({
 });
 export type SubCaseListItem = z.infer<typeof subCaseListItemSchema>;
 
+// GET /api/cases/:id/sub-cases/next-number?type=EVIDENCE
+// Sugerencia de próximo número de sub para el padre+tipo dado.
+export const subCaseNextNumberQuerySchema = z.object({
+  type: z.enum(enumValues(subCaseType), { error: "Tipo inválido" }),
+});
+export type SubCaseNextNumberQuery = z.infer<typeof subCaseNextNumberQuerySchema>;
+
+export const subCaseNextNumberResponseSchema = z.object({
+  suggested: z.string(),
+});
+export type SubCaseNextNumberResponse = z.infer<typeof subCaseNextNumberResponseSchema>;
+
 // Info del padre que se devuelve en el GET /api/cases/:id cuando :id es un sub.
 // Sirve para el banner "Este es un subexpediente de {carátula}" en el detalle.
 export const parentCaseSummarySchema = z.object({

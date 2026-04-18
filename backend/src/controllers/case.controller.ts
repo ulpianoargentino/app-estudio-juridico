@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as caseService from "../services/case.service";
-import { caseCreateSchema, caseUpdateSchema, caseQuerySchema, subCaseCreateSchema } from "@shared";
+import { caseCreateSchema, caseUpdateSchema, caseQuerySchema, subCaseCreateSchema, subCaseNextNumberQuerySchema } from "@shared";
 import { formatZodError } from "../utils/zod-error";
 
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -79,6 +79,20 @@ export async function createSubCase(req: Request, res: Response, next: NextFunct
 export async function listSubCases(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const data = await caseService.listSubCases(req.firmId!, req.params.id as string);
+    res.json({ data });
+  } catch (err) { next(err); }
+}
+
+// GET /api/cases/:id/sub-cases/next-number?type=EVIDENCE
+export async function getNextSubCaseNumber(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const parsed = subCaseNextNumberQuerySchema.safeParse(req.query);
+    if (!parsed.success) { res.status(400).json({ error: formatZodError(parsed.error) }); return; }
+    const data = await caseService.getNextSubCaseNumberSuggestion(
+      req.firmId!,
+      req.params.id as string,
+      parsed.data.type
+    );
     res.json({ data });
   } catch (err) { next(err); }
 }

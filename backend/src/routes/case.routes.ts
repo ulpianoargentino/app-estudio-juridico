@@ -17,7 +17,10 @@ router.delete("/:id", caseController.remove);
 router.post("/:id/archive", caseController.archive);
 router.post("/:id/unarchive", caseController.unarchive);
 
-// Sub-expedientes (estilo Tucumán)
+// Sub-expedientes
+// /next-number debe ir antes de /:id/sub-cases para que el router no lo
+// confunda como un id (matchea por prefijo).
+router.get("/:id/sub-cases/next-number", caseController.getNextSubCaseNumber);
 router.get("/:id/sub-cases", caseController.listSubCases);
 router.post("/:id/sub-cases", caseController.createSubCase);
 

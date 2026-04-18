@@ -539,6 +539,52 @@ export async function listSubCases(firmId: string, parentId: string) {
   return rows.map((r) => ({ ...r, parentCaseNumber: parent.caseNumber }));
 }
 
+// Sugiere el próximo número del sub para un padre+tipo dado. Algoritmo:
+//   1. Trae los `sub_case_number` de subs activos+archivados del padre con ese tipo.
+//   2. Filtra los que matchean el regex `^{prefijo}\d+$` (ej "A3", "I12").
+//   3. Devuelve `{prefijo}{maxN+1}`. Si no hay ninguno, `{prefijo}1`.
+// El usuario puede aceptar la sugerencia, escribir cualquier otra cosa o dejar
+// el campo vacío. Multi-tenant.
+export async function getNextSubCaseNumberSuggestion(
+  firmId: string,
+  parentId: string,
+  type: SubCaseType
+): Promise<{ suggested: string }> {
+  const [parent] = await db
+    .select({ id: cases.id })
+    .from(cases)
+    .where(and(eq(cases.id, parentId), eq(cases.firmId, firmId)))
+    .limit(1);
+  if (!parent) throw new AppError(404, "CASE_NOT_FOUND", "Expediente no encontrado");
+
+  const prefix = SUB_CASE_PREFIX[type];
+
+  const rows = await db
+    .select({ subCaseNumber: cases.subCaseNumber })
+    .from(caseLinks)
+    .innerJoin(cases, eq(caseLinks.caseId2, cases.id))
+    .where(
+      and(
+        eq(caseLinks.firmId, firmId),
+        eq(caseLinks.linkType, caseLinkType.SUB_CASE),
+        eq(caseLinks.caseId1, parentId),
+        eq(cases.subCaseType, type)
+      )
+    );
+
+  const re = new RegExp(`^${prefix}(\\d+)$`);
+  let maxN = 0;
+  for (const r of rows) {
+    if (!r.subCaseNumber) continue;
+    const m = re.exec(r.subCaseNumber);
+    if (m && m[1]) {
+      const n = parseInt(m[1], 10);
+      if (n > maxN) maxN = n;
+    }
+  }
+  return { suggested: `${prefix}${maxN + 1}` };
+}
+
 export async function getCaseSummary(firmId: string) {
   const result = await db
     .select({
