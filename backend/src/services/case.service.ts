@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, asc, desc, count, gte, sql, inArray, isNull } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, count, gte, sql, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { cases, persons, users, courts, parties, movements, documents, events, caseLinks } from "../models";
 import { uuidv7 } from "../utils/uuid";
@@ -91,9 +91,15 @@ export async function findAll(firmId: string, filters: FindAllFilters) {
   const clientPerson = persons;
   const attorneyUser = users;
 
-  // El listado principal sólo trae padres/expedientes normales. Los sub
-  // (subCaseType IS NOT NULL) se ven dentro de la tab "Subexpedientes" del padre.
-  const conditions = [eq(cases.firmId, firmId), isNull(cases.subCaseType)];
+  // El listado principal sólo trae padres/expedientes normales. Los subs
+  // se ven dentro de la tab "Subexpedientes" del padre. Discriminador: el
+  // case NO debe tener un link entrante SUB_CASE (caseId2 = cases.id). No
+  // alcanza con `subCaseType IS NULL` porque ahora el tipo es opcional —
+  // un sub puede tener tipo NULL.
+  const conditions = [
+    eq(cases.firmId, firmId),
+    sql`NOT EXISTS (SELECT 1 FROM ${caseLinks} WHERE ${caseLinks.firmId} = ${firmId} AND ${caseLinks.linkType} = ${caseLinkType.SUB_CASE} AND ${caseLinks.caseId2} = ${cases.id})`,
+  ];
 
   if (filters.isActive !== undefined) {
     conditions.push(eq(cases.isActive, filters.isActive));

@@ -309,39 +309,58 @@ Este es el mapeo autoritativo entre el dominio jurídico argentino (español) y 
 | Paralizado | SUSPENDED |
 | Terminado | CLOSED |
 
-### Subexpedientes (estilo Tucumán)
+### Subexpedientes
 
-Un expediente padre puede tener subexpedientes (cuadernos de prueba): por
-ejemplo padre `111/2026 — Pérez c/ Pérez` → hijos `111/2026-A1` (actor,
-documental), `111/2026-A2` (actor, informativa), `111/2026-D1` (demandado,
-documental).
+Un expediente padre puede tener subexpedientes (cuadernos de prueba,
+incidentes, anexos). Modelo flexible entre jurisdicciones — el usuario decide
+cuándo usar tipo y número, y cuándo no.
+
+Ejemplos típicos:
+- Tucumán: padre `111/2026` → hijos `111/2026-A1` (prueba), `111/2026-I1`
+  (incidente), todos con número.
+- Otra jurisdicción: padre `222/2026` → "Incidente de embargo preventivo"
+  sin tipo ni número, sólo carátula propia.
 
 Reglas:
 
-- **El sub es un `case` completo** en la tabla `cases`. La diferencia con un
-  expediente normal es que tiene `sub_case_type` seteado (`PLAINTIFF` /
-  `DEFENDANT` / `OTHER`) y `sub_case_sequence` con el número consecutivo. El
-  vínculo padre-hijo se guarda en `case_links` con `link_type = SUB_CASE`
-  (`case_id_1` = padre, `case_id_2` = hijo).
-- **Listado principal `/cases` solo muestra padres** (`sub_case_type IS NULL`).
-  Los hijos se ven dentro de la tab "Subexpedientes" del padre. Cada padre
-  muestra "(N subexpedientes)" al lado de la carátula cuando `subCaseCount > 0`.
-- **Numeración automática:** prefijo según tipo (`A`/`D`/`X`) + secuencial
-  autoincr dentro del padre+tipo. El número del hijo es
-  `{padre.caseNumber}-{prefijo}{seq}`. **El padre debe tener `caseNumber`**;
-  si no, el backend devuelve 400 `PARENT_HAS_NO_NUMBER`.
-- **Herencia al crear:** el sub copia del padre `courtId`, `primaryClientId`,
-  `responsibleAttorneyId`, `jurisdictionType`, `jurisdiction`, `caseTitle`,
-  `processType`, `status`, `currency`, `startDate`. Después no hay sync
-  dinámico — si el padre cambia, el hijo no cambia.
-- **Archive en cascada:** archivar el padre archiva en cascada todos los
+- **El sub es un `case` completo** en la tabla `cases`. Discriminador "es
+  sub" = vínculo en `case_links` con `link_type = SUB_CASE` (`case_id_1` =
+  padre, `case_id_2` = hijo). Auxiliar: `cases.sub_case_type IS NOT NULL`,
+  pero un sub puede tener `sub_case_type` también NULL.
+- **Tipo opcional**: `EVIDENCE` (Prueba), `INCIDENT` (Incidente), `OTHER`
+  (Otro). Puede dejarse vacío.
+- **Número opcional, texto libre**: el campo `sub_case_number` es text
+  nullable. La UI sugiere prefijos `A`/`I`/`X` según el tipo elegido (vía
+  `GET /api/cases/:id/sub-cases/next-number?type=…`), pero el usuario puede
+  aceptar la sugerencia, escribir cualquier otra cosa o dejar el campo vacío.
+- **Visualización del número en la UI**: si el sub tiene `subCaseNumber` Y
+  el padre tiene `caseNumber`, se muestra como `{padre}-{sub}` (ej
+  `222/2026-A1`). Si falta cualquiera, se muestra `—`.
+- **Carátula editable**: por defecto se hereda la del padre, pero el usuario
+  puede sobreescribirla al crear el sub. Útil para incidentes con título
+  propio. No hay sync dinámico — si el padre cambia su carátula después, el
+  hijo no cambia.
+- **Otras herencias del padre (no editables al crear)**: `courtId`,
+  `primaryClientId`, `responsibleAttorneyId`, `jurisdictionType`,
+  `jurisdiction`, `processType`, `status`, `currency`, `startDate`.
+- **Listado principal `/cases` solo muestra padres** (`sub_case_type IS NULL`
+  y `sin link SUB_CASE como hijo`). Los hijos se ven dentro de la tab
+  "Subexpedientes" del padre. Cada padre muestra "(N subexpedientes)" al
+  lado de la carátula cuando `subCaseCount > 0`.
+- **Sugerencia de número**: el backend recorre los subs del padre+tipo,
+  matchea `^{prefijo}\d+$` y devuelve `{prefijo}{maxN+1}`. Si no hay
+  ninguno, devuelve `{prefijo}1`. Sólo se basa en subs cuyo `sub_case_number`
+  matchea el patrón — los con números arbitrarios se ignoran para el cálculo.
+- **Archive en cascada**: archivar el padre archiva en cascada todos los
   hijos activos (transaccional). **Desarchivar NO es cascada** — cada hijo
   se desarchiva manualmente desde su propio detalle.
-- **No-sub-de-sub:** un hijo no puede tener hijos. Validado en backend
+- **No-sub-de-sub**: un hijo no puede tener hijos. Validado en backend
   (`NESTED_SUB_CASE_NOT_ALLOWED`) y la tab del frontend muestra el mensaje
   "Los subexpedientes no pueden tener subexpedientes".
-- **Endpoints:** `POST /api/cases/:id/sub-cases` (crear) y
-  `GET /api/cases/:id/sub-cases` (listar hijos del padre).
+- **Endpoints**:
+  - `POST   /api/cases/:id/sub-cases` (crear, todos los campos opcionales)
+  - `GET    /api/cases/:id/sub-cases` (listar hijos)
+  - `GET    /api/cases/:id/sub-cases/next-number?type=EVIDENCE` (sugerencia)
 
 ### Estados de otro caso (Matter)
 
