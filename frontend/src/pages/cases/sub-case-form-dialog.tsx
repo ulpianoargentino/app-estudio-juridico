@@ -114,12 +114,16 @@ export function SubCaseFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{es.cases.subCases.form.title}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
           <FormField
             label={es.cases.subCases.form.type}
             error={errors.subCaseType?.message}
@@ -229,8 +233,9 @@ export function SubCaseFormDialog({
               </div>
             </dl>
           </div>
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="border-t px-6 py-4">
             <Button
               type="button"
               variant="outline"
